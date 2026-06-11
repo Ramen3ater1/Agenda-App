@@ -371,19 +371,39 @@ function EndSessionModal({ elapsed, onSave, onCancel }: {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeView, setActiveView, timerRunning, timerDisplay, timerTaskName }: {
+function Sidebar({ activeView, setActiveView, timerRunning, timerDisplay, timerTaskName, gcalConnected }: {
   activeView: AppView;
   setActiveView: (v: AppView) => void;
   timerRunning: boolean;
   timerDisplay: string;
   timerTaskName: string;
+  gcalConnected: boolean;
 }) {
-  const nav: { view: AppView; icon: React.ReactNode; label: string }[] = [
-    { view: "workspace", icon: <LayoutDashboard size={16} />, label: "Workspace" },
-    { view: "tasks",     icon: <ListTodo size={16} />,        label: "Tasks" },
-    { view: "calendar",  icon: <CalendarDays size={16} />,    label: "Calendar" },
-    { view: "plan",      icon: <Brain size={16} />,           label: "AI Plan" },
-  ];
+  const navItem = (view: AppView, icon: React.ReactNode, label: string, opts?: { hero?: boolean; sub?: string }) => {
+    const isActive = activeView === view;
+    return (
+      <button
+        key={view}
+        onClick={() => setActiveView(view)}
+        className={`w-full flex items-center gap-3 px-3 rounded-md text-sm transition-colors ${
+          opts?.hero ? "py-3 font-medium" : "py-2.5"
+        } ${
+          isActive
+            ? "bg-accent text-white"
+            : "text-[#9E9E9C] hover:bg-sidebar-accent hover:text-sidebar-foreground"
+        }`}
+      >
+        {icon}
+        <span className="flex-1 text-left flex flex-col leading-tight">
+          <span>{label}</span>
+          {opts?.sub && (
+            <span className={`text-[10px] ${isActive ? "text-white/70" : "text-[#6B6B68]"}`}>{opts.sub}</span>
+          )}
+        </span>
+      </button>
+    );
+  };
+  const groupHeading = "px-3 pt-4 pb-1.5 text-[10px] uppercase tracking-[0.12em] text-[#6B6B68] font-semibold select-none";
   return (
     <aside className="w-[220px] shrink-0 bg-sidebar flex flex-col h-screen sticky top-0">
       <div className="px-5 pt-6 pb-5 border-b border-sidebar-border">
@@ -393,22 +413,17 @@ function Sidebar({ activeView, setActiveView, timerRunning, timerDisplay, timerT
           </div>
           <span className="text-sidebar-foreground font-semibold text-[15px] tracking-tight">FocusFlow</span>
         </div>
+        <p className="text-[11px] text-[#6B6B68] mt-2 leading-snug">Plan it. Start it. Resume in seconds.</p>
       </div>
-      <nav className="flex-1 px-2.5 py-4 space-y-0.5">
-        {nav.map(item => (
-          <button
-            key={item.view}
-            onClick={() => setActiveView(item.view)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-              activeView === item.view
-                ? "bg-accent text-white"
-                : "text-[#9E9E9C] hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            }`}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </button>
-        ))}
+      <nav className="flex-1 px-2.5 py-2 overflow-y-auto">
+        {navItem("workspace", <LayoutDashboard size={18} />, "Workspace", { hero: true })}
+
+        <div className={groupHeading}>Views</div>
+        {navItem("tasks", <ListTodo size={16} />, "Tasks")}
+        {navItem("calendar", <CalendarDays size={16} />, "Calendar", { sub: gcalConnected ? "Google synced" : "Connect Google" })}
+
+        <div className={groupHeading}>Assistant</div>
+        {navItem("plan", <Brain size={16} />, "AI Plan")}
       </nav>
       {timerRunning && (
         <div className="mx-2.5 mb-3 px-3.5 py-3 rounded-md bg-sidebar-accent border border-sidebar-border">
@@ -585,6 +600,20 @@ function WorkspaceView({
   const effectiveElapsed = isThisTimerRunning ? timerElapsed : 0;
   const totalTime = workspace.sessions.reduce((a, s) => a + s.duration, 0) + effectiveElapsed;
 
+  // Workspace whose most recent session is the latest of all — for "Resume last session".
+  const lastSessionWs = allWorkspaces
+    .filter(w => w.sessions.length > 0)
+    .map(w => ({ w, last: w.sessions.reduce((a, s) => (s.date > a ? s.date : a), "") }))
+    .sort((a, b) => b.last.localeCompare(a.last))[0]?.w;
+
+  function resumeLastSession() {
+    if (!lastSessionWs) return;
+    setResuming(true);
+    setActiveWorkspaceId(lastSessionWs.id);
+    onStart(lastSessionWs.id);
+    setTimeout(() => setResuming(false), 1200);
+  }
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault(); setDragOver(false);
     const url = e.dataTransfer.getData("URL") || e.dataTransfer.getData("text/uri-list");
@@ -642,15 +671,37 @@ function WorkspaceView({
               <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse ml-2 shrink-0" />
             )}
           </div>
-          <button
-            onClick={() => { setResuming(true); setTimeout(() => setResuming(false), 2200); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border font-medium transition-all shrink-0 ${
-              resuming ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-            }`}
-          >
-            <RotateCcw size={11} className={resuming ? "animate-spin" : ""} />
-            {resuming ? "Opening…" : "Resume Session"}
-          </button>
+        </div>
+
+        {/* Quick-start bar — plan, start, and resume in one click */}
+        <div className="px-6 py-2.5 border-b border-border flex items-center gap-2 shrink-0 bg-card/40">
+          <span className="text-[11px] text-muted-foreground mr-1 hidden sm:inline">Quick start</span>
+          {!isThisTimerRunning ? (
+            <button
+              onClick={() => onStart(workspace.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-foreground text-background hover:opacity-90 transition-opacity shrink-0"
+            >
+              <Play size={11} fill="currentColor" /> Start session
+            </button>
+          ) : (
+            <button
+              onClick={onPause}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border text-foreground hover:bg-secondary transition-colors shrink-0"
+            >
+              <Pause size={11} /> Pause
+            </button>
+          )}
+          {lastSessionWs && (
+            <button
+              onClick={resumeLastSession}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border font-medium transition-all shrink-0 ${
+                resuming ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              }`}
+            >
+              <RotateCcw size={11} className={resuming ? "animate-spin" : ""} />
+              {resuming ? "Resuming…" : `Resume last session${lastSessionWs.id !== workspace.id ? ` · ${lastSessionWs.name}` : ""}`}
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -1267,6 +1318,9 @@ function TasksView({
           <div>
             <h1 className="text-lg font-semibold">Tasks</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
+              Your work as a checklist — the same tasks appear on the Calendar.
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {tasks.filter(t => t.status !== "done").length} active · {tasks.filter(t => t.starred).length} starred
             </p>
           </div>
@@ -1552,6 +1606,9 @@ function CalendarView({ tasks, gcalEvents, gcalConnected, setGcalConnected }: {
             </button>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          The same tasks on a timeline — connect Google Calendar so deadlines and meetings line up.
+        </p>
       </div>
 
       <div className="flex-1 overflow-hidden flex">
@@ -2080,6 +2137,94 @@ function AddTaskModal({ isOpen, onClose, onAdd }: {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
+// ─── OnboardingOverlay ────────────────────────────────────────────────────────
+
+const ONBOARDING_SLIDES = [
+  {
+    icon: <LayoutDashboard size={28} className="text-accent" />,
+    title: "One focus workspace, not four tools.",
+    body: "FocusFlow replaces the scattered jumble of to-do apps, timers, and calendars. Everything you need to do — and the time you spend on it — lives in a single workspace.",
+  },
+  {
+    icon: <Play size={28} className="text-accent" fill="currentColor" />,
+    title: "Plan, start, and resume in seconds.",
+    body: "Open a workspace, hit Start, and you're working. Step away and pick up exactly where you left off with one click — your sessions, notes, and resources are always right there.",
+  },
+  {
+    icon: <CalendarDays size={28} className="text-accent" />,
+    title: "Your to-do list and calendar, one set of tasks.",
+    body: "See your work as a checklist or on a timeline — it's the same tasks, never duplicated. Connect Google Calendar so deadlines and meetings line up automatically.",
+  },
+];
+
+function OnboardingOverlay({ onDone }: { onDone: () => void }) {
+  const [i, setI] = useState(0);
+  const last = i === ONBOARDING_SLIDES.length - 1;
+  const slide = ONBOARDING_SLIDES[i];
+  return (
+    <div className="fixed inset-0 z-[60] bg-background flex flex-col items-center justify-center px-6" style={{ fontFamily: "'Instrument Sans', sans-serif" }}>
+      <button onClick={onDone} className="absolute top-5 right-6 text-xs text-muted-foreground hover:text-foreground transition-colors">
+        Skip
+      </button>
+
+      <div className="flex items-center gap-2.5 mb-10">
+        <div className="size-7 rounded bg-accent flex items-center justify-center">
+          <Zap size={13} className="text-white" />
+        </div>
+        <span className="font-semibold text-[15px] tracking-tight">FocusFlow</span>
+      </div>
+
+      <div className="w-full max-w-[440px] min-h-[220px] flex flex-col items-center text-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="flex flex-col items-center"
+          >
+            <div className="size-14 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+              {slide.icon}
+            </div>
+            <h2 className="text-2xl font-semibold tracking-tight mb-3 leading-snug">{slide.title}</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">{slide.body}</p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Progress dots */}
+      <div className="flex items-center gap-2 mt-10 mb-8">
+        {ONBOARDING_SLIDES.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setI(idx)}
+            className={`h-1.5 rounded-full transition-all ${idx === i ? "w-6 bg-accent" : "w-1.5 bg-border hover:bg-muted-foreground"}`}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        {i > 0 && (
+          <button
+            onClick={() => setI(i - 1)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft size={14} /> Back
+          </button>
+        )}
+        <button
+          onClick={() => (last ? onDone() : setI(i + 1))}
+          className="flex items-center gap-1.5 px-5 py-2 rounded-md text-sm font-medium bg-foreground text-background hover:opacity-90 transition-opacity"
+        >
+          {last ? "Get started" : "Next"}
+          {last ? <ArrowUpRight size={14} /> : <ChevronRight size={14} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [activeView, setActiveView] = useState<AppView>("workspace");
   const [tasks, setTasks] = useState<Task[]>(INIT_TASKS);
@@ -2090,6 +2235,15 @@ export default function App() {
   const [settingsTaskId, setSettingsTaskId] = useState<string | null>(null);
   const [showOptimize, setShowOptimize] = useState(false);
   const [endingWorkspaceId, setEndingWorkspaceId] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => typeof localStorage !== "undefined" && !localStorage.getItem("ff_onboarded")
+  );
+
+  function dismissOnboarding() {
+    try { localStorage.setItem("ff_onboarded", "1"); } catch { /* ignore */ }
+    setActiveView("workspace");
+    setShowOnboarding(false);
+  }
 
   const [timerWorkspaceId, setTimerWorkspaceId] = useState<string | null>(null);
   const [timerElapsed, setTimerElapsed] = useState(0);
@@ -2254,6 +2408,7 @@ export default function App() {
         timerRunning={timerRunning}
         timerDisplay={fmtTime(timerElapsed)}
         timerTaskName={timerTaskName}
+        gcalConnected={gcalConnected}
       />
 
       <main className="flex-1 overflow-hidden flex">
@@ -2356,6 +2511,9 @@ export default function App() {
           onCancel={() => setEndingWorkspaceId(null)}
         />
       )}
+
+      {/* First-run intro */}
+      {showOnboarding && <OnboardingOverlay onDone={dismissOnboarding} />}
     </div>
   );
 }
