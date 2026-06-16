@@ -72,3 +72,101 @@ describe("daysLeft (uses real today)", () => {
     expect(daysLeft("2026-06-10")).toBe(-5);
   });
 });
+import {
+  completeRecurringTask, createWorkSession, sortTasks,
+  isTodayTask, selectListTasks, generateOptimizations,
+} from "@/lib/utils";
+import type { Task } from "@/types";
+
+function mkTask(over: Partial<Task> = {}): Task {
+  return {
+    id: over.id ?? uid(),
+    title: over.title ?? "T",
+    description: "",
+    priority: over.priority ?? "medium",
+    status: over.status ?? "todo",
+    deadline: over.deadline ?? "2026-06-20",
+    steps: over.steps ?? [],
+    folderId: over.folderId,
+    workspaceId: over.workspaceId,
+    recurrence: over.recurrence ?? "none",
+  };
+}
+
+describe("completeRecurringTask", () => {
+  it("advances deadline, resets to todo, unchecks steps", () => {
+    const t = mkTask({
+      status: "done", recurrence: "weekly", deadline: "2026-06-20",
+      steps: [{ id: "s1", title: "a", done: true }],
+    });
+    const next = completeRecurringTask(t);
+    expect(next.status).toBe("todo");
+    expect(next.deadline).toBe("2026-06-27");
+    expect(next.steps[0].done).toBe(false);
+  });
+});
+
+describe("createWorkSession", () => {
+  it("builds a session with given fields and a string id", () => {
+    const s = createWorkSession("2026-06-15", 120, "note");
+    expect(s.date).toBe("2026-06-15");
+    expect(s.duration).toBe(120);
+    expect(s.comment).toBe("note");
+    expect(typeof s.id).toBe("string");
+  });
+});
+
+describe("sortTasks", () => {
+  it("done last, then by priority, then by deadline", () => {
+    const done = mkTask({ id: "d", status: "done", priority: "critical" });
+    const low = mkTask({ id: "low", priority: "low", deadline: "2026-06-10" });
+    const crit = mkTask({ id: "crit", priority: "critical", deadline: "2026-06-30" });
+    const out = sortTasks([done, low, crit]).map(t => t.id);
+    expect(out).toEqual(["crit", "low", "d"]);
+  });
+});
+
+describe("isTodayTask (fake time 2026-06-15)", () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-06-15T12:00:00")); });
+  afterEach(() => vi.useRealTimers());
+  it("in-progress is today", () => {
+    expect(isTodayTask(mkTask({ status: "in-progress", deadline: "2026-12-01" }))).toBe(true);
+  });
+  it("due tomorrow is today", () => {
+    expect(isTodayTask(mkTask({ deadline: "2026-06-16" }))).toBe(true);
+  });
+  it("far future todo is not today", () => {
+    expect(isTodayTask(mkTask({ deadline: "2026-12-01" }))).toBe(false);
+  });
+  it("done is never today", () => {
+    expect(isTodayTask(mkTask({ status: "done", deadline: "2026-06-15" }))).toBe(false);
+  });
+});
+
+describe("selectListTasks", () => {
+  it("'all' returns sorted everything", () => {
+    const a = mkTask({ id: "a", priority: "low" });
+    const b = mkTask({ id: "b", priority: "critical" });
+    expect(selectListTasks([a, b], "all").map(t => t.id)).toEqual(["b", "a"]);
+  });
+  it("folder key filters by folderId", () => {
+    const a = mkTask({ id: "a", folderId: "f1" });
+    const b = mkTask({ id: "b", folderId: "f2" });
+    expect(selectListTasks([a, b], "f1").map(t => t.id)).toEqual(["a"]);
+  });
+  it("'calendar' returns empty", () => {
+    expect(selectListTasks([mkTask()], "calendar")).toEqual([]);
+  });
+});
+
+describe("generateOptimizations (fake time 2026-06-15)", () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-06-15T12:00:00")); });
+  afterEach(() => vi.useRealTimers());
+  it("flags an imminent non-critical todo and caps at 5", () => {
+    const tasks = [mkTask({ status: "todo", priority: "high", deadline: "2026-06-17" })];
+    const out = generateOptimizations(tasks);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.length).toBeLessThanOrEqual(5);
+    expect(out[0].taskId).toBe(tasks[0].id);
+  });
+});
