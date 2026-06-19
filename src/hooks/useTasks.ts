@@ -35,23 +35,35 @@ export function useTasks() {
     tasks: state.tasks,
     getTask: findTask,
 
-    addTask: (title: string, opts?: { deadline?: string; folderId?: string }) => {
+    addTask: (title: string, opts?: Partial<Omit<Task, "id" | "title">>) => {
       const t = title.trim();
       if (!t) return;
       dispatch({
         type: "ADD_TASK",
         task: {
-          id: uid(), title: t, description: "", priority: "medium", status: "todo",
-          deadline: opts?.deadline ?? todayISO(), steps: [], folderId: opts?.folderId, recurrence: "none",
+          id: uid(), title: t,
+          description: opts?.description ?? "",
+          priority:    opts?.priority ?? "medium",
+          status:      opts?.status ?? "todo",
+          deadline:    opts?.deadline ?? todayISO(),
+          steps:       opts?.steps ?? [],
+          folderId:    opts?.folderId,
+          workspaceId: opts?.workspaceId,
+          recurrence:  opts?.recurrence ?? "none",
         },
       });
     },
 
     updateTask: (id: string, updates: Partial<Task>) => {
-      dispatch({ type: "UPDATE_TASK", id, updates });
-      if (updates.status === "done") {
-        const task = findTask(id);
-        if (task) handleCompletionSideEffects(task);
+      const task = findTask(id);
+      let next = updates;
+      if (updates.steps && task && task.status !== "done" && updates.steps.some(s => s.done)) {
+        next = { ...updates, status: "in-progress" };
+      }
+      dispatch({ type: "UPDATE_TASK", id, updates: next });
+      if (next.status === "done") {
+        const t = findTask(id);
+        if (t) handleCompletionSideEffects(t);
       }
     },
 
@@ -76,6 +88,11 @@ export function useTasks() {
     applyOptimization: (taskId: string, field: string, value: unknown) =>
       dispatch({ type: "APPLY_OPTIMIZATION", taskId, field, value }),
 
-    startFocus: (task: Task) => timer.start(ensureWorkspace(task)),
+    startFocus: (task: Task) => {
+      timer.start(ensureWorkspace(task));
+      if (task.status === "todo") {
+        dispatch({ type: "UPDATE_TASK", id: task.id, updates: { status: "in-progress" } });
+      }
+    },
   };
 }

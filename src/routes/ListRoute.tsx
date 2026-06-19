@@ -8,7 +8,7 @@ export default function ListRoute({ scope }: { scope: "today" | "all" | "folder"
   const navigate = useNavigate();
   const { folderId } = useParams();
   const [, setSearchParams] = useSearchParams();
-  const { tasks, addTask, toggleDone } = useTasks();
+  const { tasks, addTask, toggleDone, updateTask } = useTasks();
   const { folders } = useFolders();
 
   const listKey = scope === "folder" ? (folderId ?? "") : scope;
@@ -30,7 +30,13 @@ export default function ListRoute({ scope }: { scope: "today" | "all" | "folder"
       selectedTaskId={null}
       onSelectTask={(id) => navigate(`/task/${id}?list=${listKey}`)}
       onToggleDone={toggleDone}
+      onToggleStep={(taskId, stepId) => {
+        const t = tasks.find(x => x.id === taskId);
+        if (!t) return;
+        updateTask(taskId, { steps: t.steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s) });
+      }}
       onAddTask={(t) => addTask(t, { folderId: scope === "folder" ? folderId : undefined })}
+      onAdvancedAdd={() => setSearchParams({ panel: "create" })}
       onShowOptimize={() => setSearchParams({ panel: "optimize" })}
       onShowAIPlan={() => setSearchParams({ panel: "plan" })}
     />

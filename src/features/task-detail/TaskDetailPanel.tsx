@@ -7,6 +7,12 @@ import { formatDuration, formatDate, uid } from "@/lib/utils";
 import type { Task, Workspace, Folder as FolderType, Resource, ResourceType } from "@/types";
 import type { Priority, TaskStatus, RecurrenceType } from "@/types";
 
+const STATUS_CFG: Record<TaskStatus, { label: string; cls: string }> = {
+  "todo":        { label: "To Do",       cls: "bg-secondary text-muted-foreground" },
+  "in-progress": { label: "In Progress", cls: "bg-accent/10 text-accent" },
+  "done":        { label: "Done",        cls: "bg-emerald-500/10 text-emerald-600" },
+};
+
 export default function TaskDetailPanel({
   task, workspace, folders,
   onBack, onPrev, onNext, position,
@@ -101,9 +107,9 @@ export default function TaskDetailPanel({
 
             <div>
               <label className="text-xs text-muted-foreground block mb-2">Steps</label>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {task.steps.map(step => (
-                  <div key={step.id} className="flex items-center gap-2.5 group">
+                  <div key={step.id} className="flex items-center gap-2.5 group border border-border rounded-md px-3 py-2 bg-background">
                     <div onClick={() => toggleStep(step.id)} className={`shrink-0 size-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${step.done ? "bg-accent border-accent" : "border-border hover:border-foreground/40"}`}>
                       {step.done && <Check size={9} className="text-white" />}
                     </div>
@@ -115,7 +121,7 @@ export default function TaskDetailPanel({
                     <button onClick={() => removeStep(step.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all p-0.5"><Trash2 size={11} /></button>
                   </div>
                 ))}
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 border border-dashed border-border rounded-md px-3 py-2">
                   <div className="size-4 shrink-0 rounded border border-dashed border-border" />
                   <input value={newStep} onChange={e => setNewStep(e.target.value)} onKeyDown={e => e.key === "Enter" && addStep()} placeholder="Add a step…" className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground/60" />
                   {newStep.trim() && <button onClick={addStep} className="text-xs text-accent hover:opacity-80">Add</button>}
@@ -203,9 +209,9 @@ export default function TaskDetailPanel({
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Status</label>
-                <select value={task.status} onChange={e => onUpdateTask({ status: e.target.value as TaskStatus })} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30">
-                  <option value="todo">To Do</option><option value="in-progress">In Progress</option><option value="done">Done</option>
-                </select>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${STATUS_CFG[task.status].cls}`}>
+                  {STATUS_CFG[task.status].label}
+                </span>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Due date</label>

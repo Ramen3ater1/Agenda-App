@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import Sidebar from "@/features/sidebar";
 import AIOptimizeModal from "@/features/ai-optimize";
 import AIPlanPanel from "@/features/ai-plan";
+import TaskCreateModal from "@/features/task-create";
 import OnboardingOverlay from "@/features/onboarding";
 import { useTasks } from "@/hooks/useTasks";
 import { useFolders } from "@/hooks/useFolders";
@@ -15,7 +16,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { tasks, applyOptimization } = useTasks();
+  const { tasks, addTask, applyOptimization } = useTasks();
   const { folders, createFolder, renameFolder, deleteFolder } = useFolders();
   const timer = useTimer();
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem("ff_onboarded"));
@@ -77,6 +78,18 @@ export default function Layout() {
 
       {panel === "optimize" && (
         <AIOptimizeModal tasks={tasks} onApply={applyOptimization} onClose={closePanel} />
+      )}
+      {panel === "create" && (
+        <TaskCreateModal
+          folders={folders}
+          defaultFolderId={
+            activeList !== "today" && activeList !== "all" && activeList !== "calendar"
+              ? activeList
+              : undefined
+          }
+          onCreate={(title, opts) => addTask(title, opts)}
+          onClose={closePanel}
+        />
       )}
       {showOnboarding && <OnboardingOverlay onDone={dismissOnboarding} />}
     </div>
