@@ -6,8 +6,8 @@ import Layout from "@/routes/Layout";
 import ListRoute from "@/routes/ListRoute";
 import CalendarRoute from "@/routes/CalendarRoute";
 import TaskRoute from "@/routes/TaskRoute";
-import { supabase } from '@/lib/supabase'
-console.log(supabase)
+//import { supabase } from '@/lib/supabase'
+//console.log(supabase)
 //for testing supabase
 
 export default function App() {
