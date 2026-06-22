@@ -14,6 +14,7 @@ export type DataAction =
   | { type: "ADD_TASK"; task: Task }
   | { type: "UPDATE_TASK"; id: string; updates: Partial<Task> }
   | { type: "TOGGLE_TASK"; id: string }
+  | { type: "SET_TASK_ORDER"; ids: string[] }
   | { type: "RESET_RECURRING"; id: string }
   | { type: "DELETE_TASK"; id: string }
   | { type: "ADD_FOLDER"; folder: Folder }
@@ -43,6 +44,18 @@ export function taskReducer(state: DataState, action: DataAction): DataState {
         ...state,
         tasks: state.tasks.map(t => t.id === action.id ? { ...t, status: "done", steps: t.steps.map(s => ({ ...s, done: true })) } : t),
       };
+    }
+
+    case "SET_TASK_ORDER": {
+      // Reorder a subset (a list or All-section) within the global array, keeping
+      // every other task in its existing slot. `ids` is the subset's new order.
+      const idSet = new Set(action.ids);
+      const ordered = action.ids
+        .map(id => state.tasks.find(t => t.id === id))
+        .filter((t): t is Task => !!t);
+      let k = 0;
+      const arr = state.tasks.map(t => (idSet.has(t.id) ? ordered[k++] : t));
+      return { ...state, tasks: arr };
     }
 
     case "RESET_RECURRING":

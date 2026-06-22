@@ -80,7 +80,14 @@ export function sortTasks(arr: Task[]): Task[] {
 }
 
 export function isTodayTask(t: Task): boolean {
-  return t.status !== "done" && (daysLeft(t.deadline) <= 1 || t.status === "in-progress");
+  // Today = due exactly today, OR in-progress (pinned regardless of due date).
+  return t.status !== "done" && (daysLeft(t.deadline) === 0 || t.status === "in-progress");
+}
+
+// Preserve manual (array) order — active tasks first, completed ones sink to the bottom.
+// This replaces the old priority auto-sort so drag-to-reorder has an effect.
+export function orderTasks(arr: Task[]): Task[] {
+  return [...arr.filter(t => t.status !== "done"), ...arr.filter(t => t.status === "done")];
 }
 
 export function selectListTasks(tasks: Task[], listKey: string): Task[] {
@@ -89,7 +96,61 @@ export function selectListTasks(tasks: Task[], listKey: string): Task[] {
     : listKey === "all" ? tasks
     : listKey === "calendar" ? []
     : tasks.filter(t => t.folderId === listKey);
-  return sortTasks(filtered);
+  return orderTasks(filtered);
+}
+
+export interface TaskSection {
+  key: string;
+  label: string;
+  tasks: Task[];
+}
+
+// Human-readable due label. Special-cases Yesterday / Today / Tomorrow; everything
+// else keeps the original "Due Jun 25 · 2d left / overdue" style.
+export function dueLabel(deadline: string): string {
+  const dl = daysLeft(deadline);
+  if (dl === -1) return "Yesterday";
+  if (dl === 0) return "Today";
+  if (dl === 1) return "Tomorrow";
+  const base = `Due ${formatDate(deadline, "short")}`;
+  if (dl >= 2 && dl <= 3) return `${base} · ${dl}d left`;
+  if (dl < -1) return `${base} · overdue`;
+  return base;
+}
+
+// Partition the "All" list into ordered, non-overlapping buckets.
+// In-progress / due-today tasks are pinned to Today; everything else goes by deadline.
+// Week boundaries are Monday–Sunday.
+export function bucketAllTasks(tasks: Task[]): TaskSection[] {
+  const overdue: Task[] = [], todayB: Task[] = [], tomorrow: Task[] = [];
+  const thisWeek: Task[] = [], nextWeek: Task[] = [], later: Task[] = [];
+
+  const t0 = today();
+  const dow = t0.getDay();                 // 0 = Sun … 6 = Sat
+  const daysToSunday = (7 - dow) % 7;       // Mon–Sun week: 0 if today is Sunday
+  const endThisWeek = t0.getTime() + daysToSunday * 86400000;
+  const endNextWeek = endThisWeek + 7 * 86400000;
+
+  for (const task of tasks) {
+    if (isTodayTask(task)) { todayB.push(task); continue; }
+    const dl = daysLeft(task.deadline);
+    const dTime = new Date(task.deadline + "T00:00:00").getTime();
+    if (dl < 0) overdue.push(task);
+    else if (dl === 0) todayB.push(task);          // done-today tasks (isTodayTask excludes done)
+    else if (dl === 1) tomorrow.push(task);
+    else if (dTime <= endThisWeek) thisWeek.push(task);
+    else if (dTime <= endNextWeek) nextWeek.push(task);
+    else later.push(task);
+  }
+
+  return [
+    { key: "overdue",   label: "Overdue",   tasks: orderTasks(overdue) },
+    { key: "today",     label: "Today",     tasks: orderTasks(todayB) },
+    { key: "tomorrow",  label: "Tomorrow",  tasks: orderTasks(tomorrow) },
+    { key: "this-week", label: "This Week", tasks: orderTasks(thisWeek) },
+    { key: "next-week", label: "Next Week", tasks: orderTasks(nextWeek) },
+    { key: "later",     label: "Later",     tasks: orderTasks(later) },
+  ].filter(s => s.tasks.length > 0);
 }
 
 export function generateOptimizations(tasks: Task[]): OptimizeSuggestion[] {

@@ -85,6 +85,9 @@ export function useTasks() {
       dispatch({ type: "DELETE_TASK", id });
     },
 
+    reorderTasks: (ids: string[]) =>
+      dispatch({ type: "SET_TASK_ORDER", ids }),
+
     applyOptimization: (taskId: string, field: string, value: unknown) =>
       dispatch({ type: "APPLY_OPTIMIZATION", taskId, field, value }),
 

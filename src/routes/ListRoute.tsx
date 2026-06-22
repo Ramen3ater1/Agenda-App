@@ -2,17 +2,18 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import TaskListView from "@/features/task-list";
 import { useTasks } from "@/hooks/useTasks";
 import { useFolders } from "@/hooks/useFolders";
-import { selectListTasks } from "@/lib/utils";
+import { selectListTasks, bucketAllTasks } from "@/lib/utils";
 
 export default function ListRoute({ scope }: { scope: "today" | "all" | "folder" }) {
   const navigate = useNavigate();
   const { folderId } = useParams();
   const [, setSearchParams] = useSearchParams();
-  const { tasks, addTask, toggleDone, updateTask } = useTasks();
+  const { tasks, addTask, toggleDone, updateTask, reorderTasks } = useTasks();
   const { folders } = useFolders();
 
   const listKey = scope === "folder" ? (folderId ?? "") : scope;
   const listTasks = selectListTasks(tasks, listKey);
+  const sections = scope === "all" ? bucketAllTasks(tasks) : undefined;
   const folder = scope === "folder" ? folders.find(f => f.id === folderId) : undefined;
 
   const title = scope === "today" ? "Today" : scope === "all" ? "All tasks" : (folder?.name ?? "Tasks");
@@ -25,6 +26,7 @@ export default function ListRoute({ scope }: { scope: "today" | "all" | "folder"
       title={title}
       subtitle={subtitle}
       tasks={listTasks}
+      sections={sections}
       folders={folders}
       showFolderTag={scope === "all"}
       selectedTaskId={null}
@@ -35,6 +37,7 @@ export default function ListRoute({ scope }: { scope: "today" | "all" | "folder"
         if (!t) return;
         updateTask(taskId, { steps: t.steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s) });
       }}
+      onReorder={reorderTasks}
       onAddTask={(t) => addTask(t, { folderId: scope === "folder" ? folderId : undefined })}
       onAdvancedAdd={() => setSearchParams({ panel: "create" })}
       onShowOptimize={() => setSearchParams({ panel: "optimize" })}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CalendarDays, Plus, Trash2, Zap, Folder, Sun, Layers } from "lucide-react";
-import { daysLeft } from "@/lib/utils";
+import { isTodayTask } from "@/lib/utils";
 import type { Folder as FolderType, Task, SmartList } from "@/types";
 
 export default function Sidebar({
@@ -24,8 +24,7 @@ export default function Sidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const isToday = (t: Task) => t.status !== "done" && (daysLeft(t.deadline) <= 1 || t.status === "in-progress");
-  const todayCount = tasks.filter(isToday).length;
+  const todayCount = tasks.filter(isTodayTask).length;
   const activeCount = tasks.filter(t => t.status !== "done").length;
 
   function submitNew() {

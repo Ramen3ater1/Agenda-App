@@ -129,11 +129,14 @@ describe("sortTasks", () => {
 describe("isTodayTask (fake time 2026-06-15)", () => {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-06-15T12:00:00")); });
   afterEach(() => vi.useRealTimers());
-  it("in-progress is today", () => {
+  it("in-progress is today (pinned regardless of due date)", () => {
     expect(isTodayTask(mkTask({ status: "in-progress", deadline: "2026-12-01" }))).toBe(true);
   });
-  it("due tomorrow is today", () => {
-    expect(isTodayTask(mkTask({ deadline: "2026-06-16" }))).toBe(true);
+  it("due today is today", () => {
+    expect(isTodayTask(mkTask({ deadline: "2026-06-15" }))).toBe(true);
+  });
+  it("due tomorrow is NOT today", () => {
+    expect(isTodayTask(mkTask({ deadline: "2026-06-16" }))).toBe(false);
   });
   it("far future todo is not today", () => {
     expect(isTodayTask(mkTask({ deadline: "2026-12-01" }))).toBe(false);
@@ -144,10 +147,11 @@ describe("isTodayTask (fake time 2026-06-15)", () => {
 });
 
 describe("selectListTasks", () => {
-  it("'all' returns sorted everything", () => {
+  it("'all' preserves manual (array) order, done sinks to bottom", () => {
     const a = mkTask({ id: "a", priority: "low" });
     const b = mkTask({ id: "b", priority: "critical" });
-    expect(selectListTasks([a, b], "all").map(t => t.id)).toEqual(["b", "a"]);
+    const c = mkTask({ id: "c", status: "done" });
+    expect(selectListTasks([a, b, c], "all").map(t => t.id)).toEqual(["a", "b", "c"]);
   });
   it("folder key filters by folderId", () => {
     const a = mkTask({ id: "a", folderId: "f1" });
