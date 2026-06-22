@@ -17,7 +17,10 @@ export function today(): Date {
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Local date (not UTC). Must agree with today()/daysLeft(), which use local midnight;
+  // toISOString() is UTC and would return tomorrow's date in timezones behind UTC.
+  const d = today();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function formatDuration(totalSeconds: number): string {
