@@ -20,6 +20,11 @@ const ONBOARDING_SLIDES = [
     title: "Open a task to focus and finish.",
     body: "Click on the taskbar to see details and track your work",
   },
+  {
+    icon: <Play size={28} className="text-accent" fill="currentColor" />,
+    title: "Connect with your current workflow",
+    body: "Sync with google/apple calendar; see and manage everything in one app",
+  },
 ];
 
 export default function OnboardingOverlay({ onDone }: { onDone: () => void }) {
