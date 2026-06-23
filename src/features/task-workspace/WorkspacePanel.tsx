@@ -2,13 +2,32 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Play, Pause, Square,
-  Plus, Check, X, Link2, FileText, StickyNote,
+  Plus, Check, X, Link2, FileText, StickyNote, Copy,
 } from "lucide-react";
 import { formatDuration, formatDate, uid } from "@/lib/utils";
 import type { Task, Workspace, ResourceType } from "@/types";
 
 const RING_R = 58;
 const RING_C = 2 * Math.PI * RING_R;
+
+function normalizeUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  const withProto = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  try { new URL(withProto); return withProto; } catch { return null; }
+}
+function getHostname(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+}
+function faviconUrl(url: string): string {
+  return `https://www.google.com/s2/favicons?sz=64&domain=${getHostname(url)}`;
+}
+
+function Favicon({ url }: { url: string }) {
+  const [err, setErr] = useState(false);
+  if (err) return <Link2 size={13} className="text-muted-foreground shrink-0" />;
+  return <img src={faviconUrl(url)} alt="" className="size-4 shrink-0 rounded-sm" onError={() => setErr(true)} />;
+}
 
 export default function WorkspacePanel({
   task, workspace,
@@ -71,13 +90,25 @@ export default function WorkspacePanel({
   function toggleStep(id: string) { onUpdateTask({ steps: task.steps.map(s => s.id === id ? { ...s, done: !s.done } : s) }); }
 
   function addResource() {
-    if (!workspace || !newRes.title.trim()) return;
-    onUpdateWorkspace(workspace.id, { resources: [...workspace.resources, { id: uid(), ...newRes }] });
+    if (!workspace) return;
+    if (newRes.type === "link") {
+      const url = normalizeUrl(newRes.value);
+      if (!url) { toast.error("Enter a valid link"); return; }
+      const title = newRes.title.trim() || getHostname(url);
+      onUpdateWorkspace(workspace.id, { resources: [...workspace.resources, { id: uid(), type: "link", title, value: url }] });
+    } else {
+      if (!newRes.title.trim()) return;
+      onUpdateWorkspace(workspace.id, { resources: [...workspace.resources, { id: uid(), type: newRes.type, title: newRes.title.trim(), value: newRes.value }] });
+    }
     setNewRes({ type: "link", title: "", value: "" }); setAddingRes(false);
   }
   function removeResource(rid: string) {
     if (!workspace) return;
     onUpdateWorkspace(workspace.id, { resources: workspace.resources.filter(r => r.id !== rid) });
+  }
+  async function copyLink(url: string) {
+    try { await navigator.clipboard.writeText(url); toast.success("Link copied"); }
+    catch { toast.error("Couldn't copy link"); }
   }
   const resIcon = (t: ResourceType) => t === "link" ? <Link2 size={13} /> : t === "file" ? <FileText size={13} /> : <StickyNote size={13} />;
 
@@ -168,22 +199,41 @@ export default function WorkspacePanel({
                 <button onClick={() => setAddingRes(v => !v)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"><Plus size={12} /> Add</button>
               </div>
               {addingRes && (
-                <div className="flex gap-2 mb-2">
-                  <select value={newRes.type} onChange={e => setNewRes(r => ({ ...r, type: e.target.value as ResourceType }))} className="text-xs border border-border rounded px-2 py-1.5 bg-card">
-                    <option value="link">Link</option><option value="file">File</option><option value="note">Note</option>
-                  </select>
-                  <input autoFocus value={newRes.title} onChange={e => setNewRes(r => ({ ...r, title: e.target.value }))} onKeyDown={e => e.key === "Enter" && addResource()} placeholder="Title or URL" className="flex-1 text-xs border border-border rounded px-2.5 py-1.5 bg-card outline-none focus:ring-1 focus:ring-accent/40" />
-                  <button onClick={addResource} className="text-xs px-3 py-1.5 bg-foreground text-background rounded font-medium">Add</button>
+                <div className="space-y-2 mb-2">
+                  <div className="flex gap-2">
+                    <select value={newRes.type} onChange={e => setNewRes(r => ({ ...r, type: e.target.value as ResourceType }))} className="text-xs border border-border rounded px-2 py-1.5 bg-card">
+                      <option value="link">Link</option><option value="file">File</option><option value="note">Note</option>
+                    </select>
+                    {newRes.type === "link" ? (
+                      <input autoFocus value={newRes.value} onChange={e => setNewRes(r => ({ ...r, value: e.target.value }))} onKeyDown={e => e.key === "Enter" && addResource()} placeholder="Paste or type a link…" className="flex-1 text-xs border border-border rounded px-2.5 py-1.5 bg-card outline-none focus:ring-1 focus:ring-accent/40" />
+                    ) : (
+                      <input autoFocus value={newRes.title} onChange={e => setNewRes(r => ({ ...r, title: e.target.value }))} onKeyDown={e => e.key === "Enter" && addResource()} placeholder="Title" className="flex-1 text-xs border border-border rounded px-2.5 py-1.5 bg-card outline-none focus:ring-1 focus:ring-accent/40" />
+                    )}
+                    <button onClick={addResource} className="text-xs px-3 py-1.5 bg-foreground text-background rounded font-medium">Add</button>
+                  </div>
+                  {newRes.type === "link" && (
+                    <input value={newRes.title} onChange={e => setNewRes(r => ({ ...r, title: e.target.value }))} onKeyDown={e => e.key === "Enter" && addResource()} placeholder="Label (optional)" className="w-full text-xs border border-border rounded px-2.5 py-1.5 bg-card outline-none focus:ring-1 focus:ring-accent/40" />
+                  )}
                 </div>
               )}
               <div className="space-y-1">
-                {workspace.resources.map(r => (
-                  <div key={r.id} className="flex items-center gap-2 px-2.5 py-1.5 bg-secondary rounded group">
-                    <span className="text-muted-foreground shrink-0">{resIcon(r.type)}</span>
-                    <span className="text-xs flex-1 truncate">{r.title}</span>
-                    <button onClick={() => removeResource(r.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"><X size={10} /></button>
-                  </div>
-                ))}
+                {workspace.resources.map(r => {
+                  const href = r.type === "link" ? normalizeUrl(r.value || r.title) : null;
+                  return (
+                    <div key={r.id} className="flex items-center gap-2.5 px-2.5 py-1.5 bg-secondary rounded group">
+                      {href ? <Favicon url={href} /> : <span className="text-muted-foreground shrink-0">{resIcon(r.type)}</span>}
+                      {href ? (
+                        <a href={href} target="_blank" rel="noreferrer" className="text-xs flex-1 truncate hover:text-accent hover:underline">{r.title || getHostname(href)}</a>
+                      ) : (
+                        <span className="text-xs flex-1 truncate">{r.title}</span>
+                      )}
+                      {href && (
+                        <button onClick={() => copyLink(href)} title="Copy link" className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-accent transition-all"><Copy size={12} /></button>
+                      )}
+                      <button onClick={() => removeResource(r.id)} title="Remove" className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"><X size={11} /></button>
+                    </div>
+                  );
+                })}
                 {workspace.resources.length === 0 && <p className="text-[11px] text-muted-foreground py-1">No resources yet.</p>}
               </div>
             </div>

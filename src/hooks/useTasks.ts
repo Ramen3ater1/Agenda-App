@@ -34,6 +34,7 @@ export function useTasks() {
   return {
     tasks: state.tasks,
     getTask: findTask,
+    ensureWorkspace,
 
     addTask: (title: string, opts?: Partial<Omit<Task, "id" | "title">>) => {
       const t = title.trim();

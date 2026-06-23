@@ -17,7 +17,7 @@ export default function TaskRoute() {
   const [searchParams] = useSearchParams();
   const listKey = searchParams.get("list") ?? "all";
 
-  const { tasks, updateTask, toggleDone, deleteTask, startFocus } = useTasks();
+  const { tasks, updateTask, toggleDone, deleteTask, startFocus, ensureWorkspace } = useTasks();
   const { folders } = useFolders();
   const { getWorkspace, updateWorkspace } = useWorkspaces();
   const timer = useTimer();
@@ -29,6 +29,10 @@ export default function TaskRoute() {
   useEffect(() => {
     if (!task) toast.error("Task not found");
   }, [task]);
+
+  useEffect(() => {
+    if (tab === "workspace" && task && !task.workspaceId) ensureWorkspace(task);
+  }, [tab, task?.id, task?.workspaceId]);
 
   if (!task) return <Navigate to="/today" replace />;
 
