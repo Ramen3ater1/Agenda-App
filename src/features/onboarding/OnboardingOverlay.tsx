@@ -8,17 +8,17 @@ const ONBOARDING_SLIDES = [
   {
     icon: <Sun size={28} className="text-accent" />,
     title: "Start every day with Today.",
-    body: "Agenda opens on Today — the tasks due now, overdue, or already in motion. Organize the rest into your own lists so nothing gets lost.",
+    body: "Agenda opens on Today — the tasks due now, overdue, or already in motion.",
   },
   {
     icon: <Layers size={28} className="text-accent" />,
     title: "One set of tasks, two views.",
-    body: "See your work as a checklist or on the calendar — it's the same tasks, never duplicated. Connect Google Calendar so deadlines and meetings line up automatically.",
+    body: "See your work as a checklist or on the calendars.",
   },
   {
     icon: <Play size={28} className="text-accent" fill="currentColor" />,
     title: "Open a task to focus and finish.",
-    body: "Click any task to open its full page: edit the details, check off steps, and start a focus session that tracks your time and notes — then step back to your list.",
+    body: "Click on the taskbar to see details and track your work",
   },
 ];
 
