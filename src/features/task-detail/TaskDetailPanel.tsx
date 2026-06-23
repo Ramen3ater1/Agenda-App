@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  ArrowLeft, ChevronLeft, ChevronRight, Hammer,
-  Check, Trash2,
-} from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { uid } from "@/lib/utils";
 import type { Task, Folder as FolderType } from "@/types";
 import type { Priority, TaskStatus, RecurrenceType } from "@/types";
@@ -15,16 +12,10 @@ const STATUS_CFG: Record<TaskStatus, { label: string; cls: string }> = {
 
 export default function TaskDetailPanel({
   task, folders,
-  onBack, onPrev, onNext, position, onOpenWorkspace,
   onUpdateTask, onToggleDone, onDeleteTask,
 }: {
   task: Task;
   folders: FolderType[];
-  onBack: () => void;
-  onPrev?: () => void;
-  onNext?: () => void;
-  position: string;
-  onOpenWorkspace: () => void;
   onUpdateTask: (updates: Partial<Task>) => void;
   onToggleDone: () => void;
   onDeleteTask: () => void;
@@ -42,21 +33,8 @@ export default function TaskDetailPanel({
   function removeStep(id: string) { onUpdateTask({ steps: task.steps.filter(s => s.id !== id) }); }
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden">
-      <div className="px-6 py-3 border-b border-border flex items-center justify-between shrink-0">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={15} /> Back to list
-        </button>
-        <div className="flex items-center gap-1.5">
-          <button onClick={onOpenWorkspace} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm text-foreground bg-secondary hover:bg-muted transition-colors mr-1"><Hammer size={14} /> Workspace</button>
-          {position && <span className="text-[11px] text-muted-foreground font-mono mr-1">{position}</span>}
-          <button onClick={onPrev} disabled={!onPrev} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent transition-colors"><ChevronLeft size={16} /></button>
-          <button onClick={onNext} disabled={!onNext} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-30 disabled:hover:bg-transparent transition-colors"><ChevronRight size={16} /></button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[880px] mx-auto px-8 py-6 grid grid-cols-[1fr_300px] gap-6">
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-[880px] mx-auto px-8 py-6 grid grid-cols-[1fr_300px] gap-6">
           <div className="space-y-5">
             <div className="flex items-start gap-3">
               <div onClick={onToggleDone} className={`mt-1 shrink-0 size-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${done ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/30 hover:border-accent"}`}>
@@ -153,6 +131,5 @@ export default function TaskDetailPanel({
           </div>
         </div>
       </div>
-    </div>
   );
 }
