@@ -11,15 +11,18 @@ import { useTasks } from "@/hooks/useTasks";
 import { useFolders } from "@/hooks/useFolders";
 import { useTimer } from "@/store/TimerProvider";
 import { formatDuration } from "@/lib/utils";
+import { useAuth } from "@/store/AuthProvider";
 
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
   const { tasks, addTask, applyOptimization } = useTasks();
   const { folders, createFolder, renameFolder, deleteFolder } = useFolders();
   const timer = useTimer();
-  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem("ff_onboarded"));
+  const onboardKey = `ff_onboarded:${user?.id ?? "anon"}`;
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(onboardKey));
 
   const panel = searchParams.get("panel");
   function closePanel() {
@@ -38,7 +41,7 @@ export default function Layout() {
   const timerTask = timer.workspaceId ? tasks.find(t => t.workspaceId === timer.workspaceId) : null;
 
   function dismissOnboarding() {
-    try { localStorage.setItem("ff_onboarded", "1"); } catch { /* ignore */ }
+    try { localStorage.setItem(onboardKey, "1"); } catch { /* ignore */ }
     setShowOnboarding(false);
     navigate("/today");
   }

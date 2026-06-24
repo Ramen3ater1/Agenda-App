@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { CalendarDays, Plus, Trash2, Zap, Folder, Sun, Layers } from "lucide-react";
+import { CalendarDays, Plus, Trash2, Zap, Folder, Sun, Layers, LogOut } from "lucide-react";
 import { isTodayTask } from "@/lib/utils";
+import { useAuth } from "@/store/AuthProvider";
 import type { Folder as FolderType, Task, SmartList } from "@/types";
 
 export default function Sidebar({
@@ -19,6 +20,9 @@ export default function Sidebar({
   timerDisplay: string;
   timerTaskName: string;
 }) {
+  const { user, signOut } = useAuth();
+  const email = user?.email ?? "";
+  const initial = email ? email[0]!.toUpperCase() : "?";
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -155,10 +159,17 @@ export default function Sidebar({
       )}
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-2.5">
-          <div className="size-7 rounded-full bg-accent/20 flex items-center justify-center text-xs font-semibold text-accent">A</div>
-          <div>
-            <div className="text-sidebar-foreground text-xs font-medium">Alex Kim</div>
-            <div className="text-[#6B6B68] text-[11px]">Free Plan</div>
+          <div className="size-7 rounded-full bg-accent/20 flex items-center justify-center text-xs font-semibold text-accent">
+            {initial}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sidebar-foreground text-xs font-medium truncate">{email}</div>
+            <button
+              onClick={() => signOut()}
+              className="mt-0.5 flex items-center gap-1 text-[#6B6B68] text-[11px] hover:text-sidebar-foreground transition-colors"
+            >
+              <LogOut size={11} /> Sign out
+            </button>
           </div>
         </div>
       </div>
