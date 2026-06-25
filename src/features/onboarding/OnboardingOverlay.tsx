@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Sun, Layers, Play, Zap, ChevronLeft, ChevronRight, ArrowUpRight,
+  Sun, Layers, Play, ChevronLeft, ChevronRight, ArrowUpRight,
 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const ONBOARDING_SLIDES = [
   {
@@ -33,9 +34,7 @@ export default function OnboardingOverlay({ onDone }: { onDone: () => void }) {
       </button>
 
       <div className="flex items-center gap-2.5 mb-10">
-        <div className="size-7 rounded bg-accent flex items-center justify-center">
-          <Zap size={13} className="text-white" />
-        </div>
+        <img src={logo} alt="Agenda" className="size-7 rounded" />
         <span className="font-semibold text-[15px] tracking-tight">Agenda</span>
       </div>
 

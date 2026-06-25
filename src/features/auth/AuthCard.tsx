@@ -1,5 +1,5 @@
-import { Zap } from "lucide-react";
 import type { ReactNode } from "react";
+import logo from "@/assets/logo.png";
 
 export default function AuthCard({
   title, subtitle, children,
@@ -10,9 +10,7 @@ export default function AuthCard({
       style={{ fontFamily: "'Instrument Sans', sans-serif" }}
     >
       <div className="flex items-center gap-2.5 mb-8">
-        <div className="size-7 rounded bg-accent flex items-center justify-center">
-          <Zap size={13} className="text-white" />
-        </div>
+        <img src={logo} alt="Agenda" className="size-7 rounded" />
         <span className="font-semibold text-[15px] tracking-tight">Agenda</span>
       </div>
       <div className="w-full max-w-[360px]">

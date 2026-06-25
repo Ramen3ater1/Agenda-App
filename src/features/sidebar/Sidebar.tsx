@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { CalendarDays, Plus, Trash2, Zap, Folder, Sun, Layers, LogOut } from "lucide-react";
+import { CalendarDays, Plus, Trash2, Folder, Sun, Layers, LogOut } from "lucide-react";
 import { isTodayTask } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 import { useAuth } from "@/store/AuthProvider";
 import type { Folder as FolderType, Task, SmartList } from "@/types";
 
@@ -65,9 +66,7 @@ export default function Sidebar({
     <aside className="w-[240px] shrink-0 bg-sidebar flex flex-col h-screen sticky top-0">
       <div className="px-5 pt-6 pb-5 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
-          <div className="size-7 rounded bg-accent flex items-center justify-center">
-            <Zap size={13} className="text-white" />
-          </div>
+          <img src={logo} alt="Agenda" className="size-7 rounded" />
           <span className="text-sidebar-foreground font-semibold text-[15px] tracking-tight">Agenda</span>
         </div>
         <p className="text-[11px] text-[#6B6B68] mt-2 leading-snug">Plan, track, and finish your work.</p>
