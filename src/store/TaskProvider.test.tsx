@@ -48,15 +48,15 @@ describe("TaskProvider cloud integration", () => {
     localStorage.setItem("agenda:v1", JSON.stringify({ tasks: [], folders: [{ id: "fl", name: "Local" }], workspaces: [], gcalConnected: false }));
     (fetchAllData as Mock).mockResolvedValue({ tasks: [], folders: [], workspaces: [], gcalConnected: false });
     render(<TaskProvider><Probe /></TaskProvider>);
-    await waitFor(() => expect(screen.getByText("导入本地数据？")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Import local data?")).toBeInTheDocument());
   });
 
   it("imports the real local snapshot, not the clobbered empty cache", async () => {
     localStorage.setItem("agenda:v1", JSON.stringify({ tasks: [], folders: [{ id: "fl", name: "Local" }], workspaces: [], gcalConnected: false }));
     (fetchAllData as Mock).mockResolvedValue({ tasks: [], folders: [], workspaces: [], gcalConnected: false });
     render(<TaskProvider><Probe /></TaskProvider>);
-    await waitFor(() => expect(screen.getByText("导入本地数据？")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /导入/ }));
+    await waitFor(() => expect(screen.getByText("Import local data?")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /import/i }));
     await waitFor(() => expect(migrateLocalToCloud).toHaveBeenCalled());
     const arg = (migrateLocalToCloud as Mock).mock.calls[0][0] as DataState;
     expect(arg.folders).toEqual([{ id: "fl", name: "Local" }]);

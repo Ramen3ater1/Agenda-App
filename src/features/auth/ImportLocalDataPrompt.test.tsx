@@ -7,9 +7,9 @@ describe("ImportLocalDataPrompt", () => {
     const onImport = vi.fn();
     const onDismiss = vi.fn();
     render(<ImportLocalDataPrompt onImport={onImport} onDismiss={onDismiss} />);
-    fireEvent.click(screen.getByRole("button", { name: /导入/ }));
+    fireEvent.click(screen.getByRole("button", { name: /import/i }));
     expect(onImport).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: /空白/ }));
+    fireEvent.click(screen.getByRole("button", { name: /start fresh/i }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });
