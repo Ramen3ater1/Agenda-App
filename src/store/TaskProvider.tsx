@@ -1,22 +1,94 @@
-import { createContext, useContext, useEffect, useReducer, type ReactNode, type Dispatch } from "react";
+import {
+  createContext, useContext, useEffect, useReducer, useRef, useState, useCallback,
+  type ReactNode, type Dispatch,
+} from "react";
+import { toast } from "sonner";
 import { taskReducer, initDataState, type DataState, type DataAction } from "@/store/taskReducer";
-import { saveState } from "@/lib/storage";
+import { loadState, saveState } from "@/lib/storage";
+import { useAuth } from "@/store/AuthProvider";
+import { fetchAllData, syncAction } from "@/lib/db/sync";
+import { migrateLocalToCloud } from "@/lib/db/migrate";
+import ImportLocalDataPrompt from "@/features/auth/ImportLocalDataPrompt";
 
 interface TaskStore {
   state: DataState;
   dispatch: Dispatch<DataAction>;
 }
 
+const EMPTY: DataState = { tasks: [], folders: [], workspaces: [], gcalConnected: false };
 const TaskContext = createContext<TaskStore | null>(null);
 
+function isEmptyState(s: DataState): boolean {
+  return s.tasks.length === 0 && s.folders.length === 0 && s.workspaces.length === 0;
+}
+
 export function TaskProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(taskReducer, undefined, initDataState);
+  const { user } = useAuth();
+  const [state, rawDispatch] = useReducer(taskReducer, undefined, initDataState); // cache-first
+  const [showImport, setShowImport] = useState(false);
 
+  // keep a ref so the wrapped dispatch can read current state without re-creating
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // write-through local cache (offline read cache)
+  useEffect(() => { saveState(state); }, [state]);
+
+  // load cloud data on login
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cloud = await fetchAllData();
+        if (cancelled) return;
+        if (!isEmptyState(cloud)) {
+          rawDispatch({ type: "REPLACE_ALL", state: { ...cloud, gcalConnected: loadState()?.gcalConnected ?? false } });
+        } else {
+          const local = loadState();
+          const localNonEmpty = !!local && !isEmptyState(local);
+          const dismissed = localStorage.getItem(`agenda:import-dismissed:${user.id}`);
+          rawDispatch({ type: "REPLACE_ALL", state: { ...EMPTY, gcalConnected: local?.gcalConnected ?? false } });
+          if (localNonEmpty && !dismissed) setShowImport(true);
+        }
+      } catch {
+        if (!cancelled) toast.error("离线，仅显示缓存");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
-  return <TaskContext.Provider value={{ state, dispatch }}>{children}</TaskContext.Provider>;
+  const dispatch = useCallback<Dispatch<DataAction>>((action) => {
+    const prev = stateRef.current;
+    const next = taskReducer(prev, action);
+    rawDispatch(action);
+    void syncAction(action, prev, next).catch(() => {
+      toast.error("保存失败，正在重试…");
+      void syncAction(action, prev, next).catch(() => toast.error("仍未同步，请检查网络"));
+    });
+  }, []);
+
+  function onImport() {
+    const local = loadState();
+    setShowImport(false);
+    if (!local) return;
+    void migrateLocalToCloud(local)
+      .then(() => fetchAllData())
+      .then(cloud => rawDispatch({ type: "REPLACE_ALL", state: { ...cloud, gcalConnected: local.gcalConnected } }))
+      .catch(() => toast.error("导入失败，请重试"));
+  }
+
+  function onDismiss() {
+    if (user) localStorage.setItem(`agenda:import-dismissed:${user.id}`, "1");
+    setShowImport(false);
+  }
+
+  return (
+    <TaskContext.Provider value={{ state, dispatch }}>
+      {children}
+      {showImport && <ImportLocalDataPrompt onImport={onImport} onDismiss={onDismiss} />}
+    </TaskContext.Provider>
+  );
 }
 
 export function useTaskStore(): TaskStore {
