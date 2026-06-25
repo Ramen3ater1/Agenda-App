@@ -44,6 +44,16 @@ describe("TaskProvider cloud integration", () => {
     expect(syncAction).toHaveBeenCalled();
   });
 
+  it("guest (no user) updates state without touching the cloud", async () => {
+    (useAuth as Mock).mockReturnValue({ user: null });
+    render(<TaskProvider><Probe /></TaskProvider>);
+    fireEvent.click(screen.getByRole("button", { name: "add" }));
+    await waitFor(() => expect(screen.getByTestId("folders").textContent).toContain("New"));
+    expect(fetchAllData).not.toHaveBeenCalled();
+    expect(syncAction).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem("agenda:v1")!).folders).toContainEqual({ id: "fx", name: "New" });
+  });
+
   it("shows import prompt when cloud empty and localStorage non-empty", async () => {
     localStorage.setItem("agenda:v1", JSON.stringify({ tasks: [], folders: [{ id: "fl", name: "Local" }], workspaces: [], gcalConnected: false }));
     (fetchAllData as Mock).mockResolvedValue({ tasks: [], folders: [], workspaces: [], gcalConnected: false });

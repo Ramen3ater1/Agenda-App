@@ -9,10 +9,11 @@ vi.mock("@/store/AuthProvider", () => ({ useAuth: vi.fn() }));
 const signIn = vi.fn();
 const signUp = vi.fn();
 const signInWithGoogle = vi.fn();
+const continueAsGuest = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (useAuth as Mock).mockReturnValue({ signIn, signUp, signInWithGoogle });
+  (useAuth as Mock).mockReturnValue({ signIn, signUp, signInWithGoogle, continueAsGuest });
 });
 
 function renderForm(mode: "login" | "signup") {
@@ -70,6 +71,12 @@ describe("AuthForm", () => {
     renderForm("login");
     fireEvent.click(screen.getByRole("button", { name: /google/i }));
     await waitFor(() => expect(signInWithGoogle).toHaveBeenCalled());
+  });
+
+  it("enters guest mode when 'Continue as guest' is clicked", () => {
+    renderForm("login");
+    fireEvent.click(screen.getByRole("button", { name: /continue as guest/i }));
+    expect(continueAsGuest).toHaveBeenCalled();
   });
 
   it("in signup mode calls signUp", async () => {

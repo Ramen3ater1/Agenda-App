@@ -6,7 +6,7 @@ import AuthCard from "./AuthCard";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, continueAsGuest } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isSignup = mode === "signup";
@@ -50,6 +50,11 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setError(""); setNotice("");
     const { error } = await signInWithGoogle();
     if (error) setError(error.message);
+  }
+
+  function onGuest() {
+    continueAsGuest();
+    navigate("/today", { replace: true });
   }
 
   const inputCls =
@@ -112,6 +117,14 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
           {loading ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={onGuest}
+        className="w-full mt-4 px-4 py-2.5 rounded-md border border-dashed border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+      >
+        Continue as guest
+      </button>
 
       <p className="text-center text-xs text-muted-foreground mt-5">
         {isSignup ? "Already have an account? " : "Don't have an account? "}

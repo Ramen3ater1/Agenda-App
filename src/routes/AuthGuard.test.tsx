@@ -28,10 +28,16 @@ describe("AuthGuard", () => {
     expect(screen.getByText("Loading…")).toBeInTheDocument();
   });
 
-  it("redirects to /login when unauthenticated", () => {
-    (useAuth as Mock).mockReturnValue({ user: null, loading: false });
+  it("redirects to /login when unauthenticated and not a guest", () => {
+    (useAuth as Mock).mockReturnValue({ user: null, loading: false, isGuest: false });
     renderAt();
     expect(screen.getByText("LOGIN PAGE")).toBeInTheDocument();
+  });
+
+  it("renders the outlet for a guest", () => {
+    (useAuth as Mock).mockReturnValue({ user: null, loading: false, isGuest: true });
+    renderAt();
+    expect(screen.getByText("PROTECTED")).toBeInTheDocument();
   });
 
   it("renders the outlet when authenticated", () => {

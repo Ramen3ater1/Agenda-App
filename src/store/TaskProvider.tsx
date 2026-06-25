@@ -31,6 +31,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
 
+  // keep a ref to the current user so dispatch can skip cloud sync for guests
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
   // snapshot local data before the write-through cache clobbers it with empty state
   const pendingImportRef = useRef<DataState | null>(null);
 
@@ -68,6 +72,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     const prev = stateRef.current;
     const next = taskReducer(prev, action);
     rawDispatch(action);
+    // guest mode: persist locally only, no cloud sync
+    if (!userRef.current) return;
     void syncAction(action, prev, next).catch(() => {
       toast.error("保存失败，正在重试…");
       void syncAction(action, prev, next).catch(() => toast.error("仍未同步，请检查网络"));

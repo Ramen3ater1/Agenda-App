@@ -2,9 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+const GUEST_KEY = "agenda:guest";
+
 interface AuthValue {
   user: User | null;
   loading: boolean;
+  isGuest: boolean;
+  continueAsGuest: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -16,6 +20,7 @@ const AuthContext = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [guest, setGuest] = useState(() => localStorage.getItem(GUEST_KEY) === "1");
 
   useEffect(() => {
     supabase.auth
@@ -49,20 +54,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
+  const continueAsGuest = useCallback<AuthValue["continueAsGuest"]>(() => {
+    localStorage.setItem(GUEST_KEY, "1");
+    setGuest(true);
+  }, []);
+
   const signOut = useCallback<AuthValue["signOut"]>(async () => {
+    localStorage.removeItem(GUEST_KEY);
+    setGuest(false);
     await supabase.auth.signOut();
   }, []);
 
+  const user = session?.user ?? null;
   const value = useMemo<AuthValue>(
     () => ({
-      user: session?.user ?? null,
+      user,
       loading,
+      isGuest: !user && guest,
+      continueAsGuest,
       signIn,
       signUp,
       signInWithGoogle,
       signOut,
     }),
-    [session, loading, signIn, signUp, signInWithGoogle, signOut],
+    [user, loading, guest, continueAsGuest, signIn, signUp, signInWithGoogle, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

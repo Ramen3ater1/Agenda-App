@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { CalendarDays, Plus, Trash2, Folder, Sun, Layers, LogOut } from "lucide-react";
 import { isTodayTask } from "@/lib/utils";
 import logo from "@/assets/logo.png";
@@ -21,9 +22,9 @@ export default function Sidebar({
   timerDisplay: string;
   timerTaskName: string;
 }) {
-  const { user, signOut } = useAuth();
+  const { user, isGuest, signOut } = useAuth();
   const email = user?.email ?? "";
-  const initial = email ? email[0]!.toUpperCase() : "?";
+  const initial = email ? email[0]!.toUpperCase() : isGuest ? "G" : "?";
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -162,13 +163,27 @@ export default function Sidebar({
             {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sidebar-foreground text-xs font-medium truncate">{email}</div>
-            <button
-              onClick={() => signOut()}
-              className="mt-0.5 flex items-center gap-1 text-[#6B6B68] text-[11px] hover:text-sidebar-foreground transition-colors"
-            >
-              <LogOut size={11} /> Sign out
-            </button>
+            {isGuest ? (
+              <>
+                <div className="text-sidebar-foreground text-xs font-medium truncate">Guest</div>
+                <Link
+                  to="/signup"
+                  className="mt-0.5 inline-flex items-center gap-1 text-accent text-[11px] hover:underline transition-colors"
+                >
+                  Sign up to save your data
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="text-sidebar-foreground text-xs font-medium truncate">{email}</div>
+                <button
+                  onClick={() => signOut()}
+                  className="mt-0.5 flex items-center gap-1 text-[#6B6B68] text-[11px] hover:text-sidebar-foreground transition-colors"
+                >
+                  <LogOut size={11} /> Sign out
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

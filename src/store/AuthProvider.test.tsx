@@ -21,9 +21,11 @@ const wrapper = ({ children }: { children: ReactNode }) => <AuthProvider>{childr
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   (supabase.auth.onAuthStateChange as Mock).mockReturnValue({
     data: { subscription: { unsubscribe: vi.fn() } },
   });
+  (supabase.auth.signOut as Mock).mockResolvedValue({ error: null });
 });
 
 describe("AuthProvider", () => {
@@ -66,5 +68,43 @@ describe("AuthProvider", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => { cb("SIGNED_IN", { user: { id: "u2", email: "c@d.com" } }); });
     await waitFor(() => expect(result.current.user?.email).toBe("c@d.com"));
+  });
+
+  it("continueAsGuest sets isGuest and persists the flag", async () => {
+    (supabase.auth.getSession as Mock).mockResolvedValue({ data: { session: null } });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.isGuest).toBe(false);
+    act(() => { result.current.continueAsGuest(); });
+    await waitFor(() => expect(result.current.isGuest).toBe(true));
+    expect(localStorage.getItem("agenda:guest")).toBe("1");
+  });
+
+  it("restores guest state from localStorage on mount", async () => {
+    localStorage.setItem("agenda:guest", "1");
+    (supabase.auth.getSession as Mock).mockResolvedValue({ data: { session: null } });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.isGuest).toBe(true);
+  });
+
+  it("is not a guest when a real user is present", async () => {
+    localStorage.setItem("agenda:guest", "1");
+    (supabase.auth.getSession as Mock).mockResolvedValue({
+      data: { session: { user: { id: "u1", email: "a@b.com" } } },
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.isGuest).toBe(false);
+  });
+
+  it("signOut clears the guest flag", async () => {
+    localStorage.setItem("agenda:guest", "1");
+    (supabase.auth.getSession as Mock).mockResolvedValue({ data: { session: null } });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.signOut(); });
+    expect(localStorage.getItem("agenda:guest")).toBeNull();
+    expect(result.current.isGuest).toBe(false);
   });
 });
