@@ -31,6 +31,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
 
+  // snapshot local data before the write-through cache clobbers it with empty state
+  const pendingImportRef = useRef<DataState | null>(null);
+
   // write-through local cache (offline read cache)
   useEffect(() => { saveState(state); }, [state]);
 
@@ -49,7 +52,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           const localNonEmpty = !!local && !isEmptyState(local);
           const dismissed = localStorage.getItem(`agenda:import-dismissed:${user.id}`);
           rawDispatch({ type: "REPLACE_ALL", state: { ...EMPTY, gcalConnected: local?.gcalConnected ?? false } });
-          if (localNonEmpty && !dismissed) setShowImport(true);
+          if (localNonEmpty && !dismissed) {
+            pendingImportRef.current = local as DataState;
+            setShowImport(true);
+          }
         }
       } catch {
         if (!cancelled) toast.error("离线，仅显示缓存");
@@ -69,7 +75,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }, []);
 
   function onImport() {
-    const local = loadState();
+    const local = pendingImportRef.current;
     setShowImport(false);
     if (!local) return;
     void migrateLocalToCloud(local)
