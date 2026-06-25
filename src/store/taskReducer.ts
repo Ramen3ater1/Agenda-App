@@ -1,7 +1,6 @@
 import type { Task, Folder, Workspace, WorkSession } from "@/types";
 import { completeRecurringTask } from "@/lib/utils";
 import { loadState, type PersistedState } from "@/lib/storage";
-import { INIT_TASKS, INIT_FOLDERS, INIT_WORKSPACES } from "@/constants";
 
 export interface DataState {
   tasks: Task[];
@@ -24,7 +23,8 @@ export type DataAction =
   | { type: "UPDATE_WORKSPACE"; id: string; updates: Partial<Workspace> }
   | { type: "ADD_SESSION"; workspaceId: string; session: WorkSession }
   | { type: "APPLY_OPTIMIZATION"; taskId: string; field: string; value: unknown }
-  | { type: "SET_GCAL"; connected: boolean };
+  | { type: "SET_GCAL"; connected: boolean }
+  | { type: "REPLACE_ALL"; state: DataState };
 
 export function taskReducer(state: DataState, action: DataAction): DataState {
   switch (action.type) {
@@ -105,13 +105,14 @@ export function taskReducer(state: DataState, action: DataAction): DataState {
     case "SET_GCAL":
       return { ...state, gcalConnected: action.connected };
 
+    case "REPLACE_ALL":
+      return action.state;
+
     default:
       return state;
   }
 }
 
 export function initDataState(): DataState {
-  const persisted: PersistedState | null = loadState();
-  if (persisted) return persisted;
-  return { tasks: INIT_TASKS, folders: INIT_FOLDERS, workspaces: INIT_WORKSPACES, gcalConnected: false };
+  return loadState() ?? { tasks: [], folders: [], workspaces: [], gcalConnected: false };
 }

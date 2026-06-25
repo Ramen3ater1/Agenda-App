@@ -33,7 +33,7 @@ describe("AuthForm", () => {
     renderForm("login");
     fill("not-an-email", "secret123");
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-    expect(screen.getByText("请输入有效的邮箱地址。")).toBeInTheDocument();
+    expect(screen.getByText("Enter a valid email address")).toBeInTheDocument();
     expect(signIn).not.toHaveBeenCalled();
   });
 
@@ -41,7 +41,7 @@ describe("AuthForm", () => {
     renderForm("login");
     fill("a@b.com", "123");
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-    expect(screen.getByText("密码至少 6 位。")).toBeInTheDocument();
+    expect(screen.getByText("Password should be at least 6 digits")).toBeInTheDocument();
     expect(signIn).not.toHaveBeenCalled();
   });
 

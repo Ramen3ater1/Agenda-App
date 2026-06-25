@@ -21,8 +21,8 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
     (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/today";
 
   function validate(): string {
-    if (!EMAIL_RE.test(email)) return "请输入有效的邮箱地址。";
-    if (password.length < 6) return "密码至少 6 位。";
+    if (!EMAIL_RE.test(email)) return "Enter a valid email address";
+    if (password.length < 6) return "Password should be at least 6 digits";
     return "";
   }
 
@@ -36,7 +36,7 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       const { error, session } = await signUp(email, password);
       setLoading(false);
       if (error) { setError(error.message); return; }
-      if (!session) { setNotice("注册成功，请到邮箱点击确认链接后再登录。"); return; }
+      if (!session) { setNotice("Successfully signed up for Agenda! Check confirmation email."); return; }
       navigate(from, { replace: true });
     } else {
       const { error } = await signIn(email, password);

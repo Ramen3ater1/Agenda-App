@@ -70,4 +70,15 @@ describe("taskReducer", () => {
     const s = taskReducer(base(), { type: "SET_GCAL", connected: true });
     expect(s.gcalConnected).toBe(true);
   });
+
+  it("REPLACE_ALL swaps the whole state", () => {
+    const replacement: DataState = {
+      tasks: [{ id: "tz", title: "Z", description: "", priority: "low", status: "todo", deadline: "2026-07-01", steps: [], recurrence: "none" }],
+      folders: [{ id: "fz", name: "Zed" }],
+      workspaces: [],
+      gcalConnected: true,
+    };
+    const s = taskReducer(base(), { type: "REPLACE_ALL", state: replacement });
+    expect(s).toEqual(replacement);
+  });
 });
