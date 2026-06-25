@@ -62,7 +62,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch {
-        if (!cancelled) toast.error("离线，仅显示缓存");
+        if (!cancelled) toast.error("Offline — showing cached data");
       }
     })();
     return () => { cancelled = true; };
@@ -75,8 +75,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     // guest mode: persist locally only, no cloud sync
     if (!userRef.current) return;
     void syncAction(action, prev, next).catch(() => {
-      toast.error("保存失败，正在重试…");
-      void syncAction(action, prev, next).catch(() => toast.error("仍未同步，请检查网络"));
+      toast.error("Save failed, retrying…");
+      void syncAction(action, prev, next).catch(() => toast.error("Still not synced — check your connection"));
     });
   }, []);
 
@@ -87,7 +87,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     void migrateLocalToCloud(local)
       .then(() => fetchAllData())
       .then(cloud => rawDispatch({ type: "REPLACE_ALL", state: { ...cloud, gcalConnected: local.gcalConnected } }))
-      .catch(() => toast.error("导入失败，请重试"));
+      .catch(() => toast.error("Import failed, please try again"));
   }
 
   function onDismiss() {
