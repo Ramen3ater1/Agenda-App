@@ -32,18 +32,14 @@ export default function Layout() {
   }
 
   const path = location.pathname;
-  const activeList =
-    path.startsWith("/all") ? "all"
-    : path.startsWith("/calendar") ? "calendar"
-    : path.startsWith("/folder/") ? path.split("/folder/")[1]
-    : "today";
+  const activeList = path.startsWith("/planner/") ? (path.split("/planner/")[1].split("/")[0] || "all") : "all";
 
   const timerTask = timer.workspaceId ? tasks.find(t => t.workspaceId === timer.workspaceId) : null;
 
   function dismissOnboarding() {
     try { localStorage.setItem(onboardKey, "1"); } catch { /* ignore */ }
     setShowOnboarding(false);
-    navigate("/today");
+    navigate("/planner/all");
   }
 
   return (
@@ -51,12 +47,12 @@ export default function Layout() {
       <Toaster position="bottom-right" />
       <Sidebar
         activeList={activeList}
-        onSelectList={(id) => navigate(id === "today" || id === "all" || id === "calendar" ? `/${id}` : `/folder/${id}`)}
+        onSelectList={(id) => navigate(`/planner/${id}`)}
         folders={folders}
         tasks={tasks}
-        onCreateFolder={(name) => { const id = createFolder(name); navigate(`/folder/${id}`); }}
+        onCreateFolder={(name) => { const id = createFolder(name); navigate(`/planner/${id}`); }}
         onRenameFolder={renameFolder}
-        onDeleteFolder={(id) => { deleteFolder(id); if (activeList === id) navigate("/all"); }}
+        onDeleteFolder={(id) => { deleteFolder(id); if (activeList === id) navigate("/planner/all"); }}
         timerRunning={timer.running}
         timerDisplay={formatDuration(timer.elapsed)}
         timerTaskName={timerTask?.title ?? ""}
@@ -85,11 +81,7 @@ export default function Layout() {
       {panel === "create" && (
         <TaskCreateModal
           folders={folders}
-          defaultFolderId={
-            activeList !== "today" && activeList !== "all" && activeList !== "calendar"
-              ? activeList
-              : undefined
-          }
+          defaultFolderId={activeList !== "all" ? activeList : undefined}
           onCreate={(title, opts) => addTask(title, opts)}
           onClose={closePanel}
         />

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { CalendarDays, Plus, Trash2, Folder, Sun, Layers, LogOut } from "lucide-react";
-import { isTodayTask } from "@/lib/utils";
+import { Plus, Trash2, Folder, Layers, LogOut } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/store/AuthProvider";
 import type { Folder as FolderType, Task, SmartList } from "@/types";
@@ -30,7 +29,6 @@ export default function Sidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const todayCount = tasks.filter(isTodayTask).length;
   const activeCount = tasks.filter(t => t.status !== "done").length;
 
   function submitNew() {
@@ -74,9 +72,7 @@ export default function Sidebar({
       </div>
 
       <nav className="flex-1 px-2.5 py-2 overflow-y-auto">
-        {smartItem("today", <Sun size={16} />, "Today", todayCount)}
         {smartItem("all", <Layers size={16} />, "All", activeCount)}
-        {smartItem("calendar", <CalendarDays size={16} />, "Calendar")}
 
         <div className="flex items-center justify-between pr-1">
           <div className={groupHeading}>Lists</div>

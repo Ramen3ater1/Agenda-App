@@ -1,8 +1,12 @@
 export type Priority = "critical" | "high" | "medium" | "low";
 export type TaskStatus = "todo" | "in-progress" | "done";
-export type SmartList = "today" | "all" | "calendar";
+export type SmartList = "all";
 export type ResourceType = "link" | "file" | "note";
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
+
+// Planner axes — see docs/superpowers/specs/2026-06-28-three-axis-planner-design.md
+export type PlannerLevel = "day" | "week" | "month";
+export type PlannerView = "checklist" | "calendar" | "timeline";
 
 export interface TaskStep {
   id: string;
@@ -26,6 +30,11 @@ export interface Task {
   folderId?: string;
   workspaceId?: string;
   recurrence: RecurrenceType;
+  // Scheduling — optional, backward compatible. When absent, the task is treated
+  // as an all-day task on its `deadline` date (see lib/timeWindow.ts).
+  startDate?: string;   // "2026-06-28"
+  startTime?: string;   // "09:30" (24h); absent = all-day
+  durationMin?: number; // estimated minutes; length of calendar/timeline blocks
 }
 
 export interface Resource {

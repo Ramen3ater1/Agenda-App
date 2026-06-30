@@ -39,9 +39,7 @@ export default function TaskRoute() {
   const workspace = getWorkspace(task.workspaceId);
   const listIds = selectListTasks(tasks, listKey).map(t => t.id);
   const idx = listIds.indexOf(task.id);
-  const backTo = listKey === "calendar" ? "/calendar"
-    : listKey === "all" || listKey === "today" ? `/${listKey}`
-    : `/folder/${listKey}`;
+  const backTo = `/planner/${listKey}`;
 
   function go(toId: string) {
     navigate(`/task/${toId}?list=${listKey}`);

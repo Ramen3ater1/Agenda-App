@@ -4,8 +4,7 @@ import { AuthProvider } from "@/store/AuthProvider";
 import AuthGuard from "@/routes/AuthGuard";
 import ProtectedProviders from "@/routes/ProtectedProviders";
 import Layout from "@/routes/Layout";
-import ListRoute from "@/routes/ListRoute";
-import CalendarRoute from "@/routes/CalendarRoute";
+import PlannerRoute from "@/routes/PlannerRoute";
 import TaskRoute from "@/routes/TaskRoute";
 import LoginRoute from "@/routes/LoginRoute";
 import SignupRoute from "@/routes/SignupRoute";
@@ -21,16 +20,17 @@ export default function App() {
             <Route element={<AuthGuard />}>
               <Route element={<ProtectedProviders />}>
                 <Route element={<Layout />}>
-                  <Route index element={<Navigate to="/today" replace />} />
-                  <Route path="today" element={<ListRoute scope="today" />} />
-                  <Route path="all" element={<ListRoute scope="all" />} />
-                  <Route path="folder/:folderId" element={<ListRoute scope="folder" />} />
-                  <Route path="calendar" element={<CalendarRoute />} />
+                  <Route index element={<Navigate to="/planner/all" replace />} />
+                  <Route path="planner/:where" element={<PlannerRoute />} />
                   <Route path="task/:taskId" element={<TaskRoute />} />
+                  {/* Legacy redirects */}
+                  <Route path="today" element={<Navigate to="/planner/all?level=day&view=checklist" replace />} />
+                  <Route path="all" element={<Navigate to="/planner/all" replace />} />
+                  <Route path="calendar" element={<Navigate to="/planner/all?view=calendar" replace />} />
                 </Route>
               </Route>
             </Route>
-            <Route path="*" element={<Navigate to="/today" replace />} />
+            <Route path="*" element={<Navigate to="/planner/all" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

@@ -2,7 +2,17 @@ import { toast } from "sonner";
 import { useTaskStore } from "@/store/TaskProvider";
 import { useTimer } from "@/store/TimerProvider";
 import { uid, todayISO, advanceDeadline, formatDate } from "@/lib/utils";
+import { minutesToTime } from "@/lib/timeWindow";
 import type { Task } from "@/types";
+
+// A sensible default for a freshly created task: starting ~10 minutes from now
+// (snapped to 5-minute marks) so it lands on the calendar/timeline instead of
+// piling up as an all-day item.
+function defaultStartTime(): string {
+  const now = new Date();
+  const min = Math.round((now.getHours() * 60 + now.getMinutes() + 10) / 5) * 5;
+  return minutesToTime(Math.min(min, 23 * 60 + 55));
+}
 
 export function useTasks() {
   const { state, dispatch } = useTaskStore();
@@ -51,6 +61,9 @@ export function useTasks() {
           folderId:    opts?.folderId,
           workspaceId: opts?.workspaceId,
           recurrence:  opts?.recurrence ?? "none",
+          startDate:   opts?.startDate ?? opts?.deadline ?? todayISO(),
+          startTime:   opts?.startTime ?? defaultStartTime(),
+          durationMin: opts?.durationMin ?? 60,
         },
       });
     },

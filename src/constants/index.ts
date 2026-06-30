@@ -63,8 +63,9 @@ export const INIT_TASKS: Task[] = [
   {
     id: "t1", title: "Portfolio Website Redesign",
     description: "Complete redesign with updated branding and Next.js 14 implementation.",
-    priority: "high", status: "in-progress", deadline: "2026-06-20", folderId: "f1",
+    priority: "high", status: "in-progress", deadline: "2026-07-03", folderId: "f1",
     workspaceId: "w1", recurrence: "none",
+    startDate: "2026-06-30", startTime: "09:00", durationMin: 120,
     steps: [
       { id: "s1a", title: "Define scope and gather inspiration", done: true },
       { id: "s1b", title: "Create wireframes for key pages", done: true },
@@ -76,8 +77,9 @@ export const INIT_TASKS: Task[] = [
   {
     id: "t2", title: "Q2 Performance Review Presentation",
     description: "Quarterly metrics and team performance analysis for leadership team.",
-    priority: "critical", status: "todo", deadline: "2026-06-08", folderId: "f2",
+    priority: "critical", status: "todo", deadline: "2026-06-30", folderId: "f2",
     workspaceId: "w2", recurrence: "none",
+    startDate: "2026-06-30", startTime: "14:00", durationMin: 90,
     steps: [
       { id: "s2a", title: "Pull metrics from analytics dashboard", done: false },
       { id: "s2b", title: "Draft key insights and recommendations", done: false },
@@ -90,6 +92,7 @@ export const INIT_TASKS: Task[] = [
     description: "Complete advanced TypeScript patterns, generics, and decorators modules.",
     priority: "medium", status: "in-progress", deadline: "2026-07-15", folderId: "f3",
     workspaceId: "w3", recurrence: "weekly",
+    startDate: "2026-07-01", startTime: "10:00", durationMin: 120,
     steps: [
       { id: "s3a", title: "Set up practice environment", done: true },
       { id: "s3b", title: "Complete generics module (ch. 4–7)", done: false },
@@ -100,8 +103,9 @@ export const INIT_TASKS: Task[] = [
   {
     id: "t4", title: "Team Offsite Planning",
     description: "Organize Q3 two-day offsite for the 12-person product team.",
-    priority: "low", status: "todo", deadline: "2026-06-25", folderId: "f2",
+    priority: "low", status: "todo", deadline: "2026-07-09", folderId: "f2",
     workspaceId: "w4", recurrence: "none",
+    startDate: "2026-07-02", startTime: "13:30", durationMin: 60,
     steps: [
       { id: "s4a", title: "Research and book venue", done: false },
       { id: "s4b", title: "Send calendar invites to all attendees", done: false },
@@ -111,8 +115,9 @@ export const INIT_TASKS: Task[] = [
   {
     id: "t5", title: "API Rate Limiting Implementation",
     description: "Redis-based rate limiting middleware for the public REST API.",
-    priority: "high", status: "todo", deadline: "2026-06-12",
+    priority: "high", status: "todo", deadline: "2026-07-01",
     workspaceId: "w5", recurrence: "none",
+    startDate: "2026-06-29", startTime: "11:00", durationMin: 180,
     steps: [
       { id: "s5a", title: "Research Redis rate limiting patterns", done: false },
       { id: "s5b", title: "Write middleware implementation", done: false },
@@ -123,12 +128,12 @@ export const INIT_TASKS: Task[] = [
 ];
 
 export const GCAL_EVENTS: GCalEvent[] = [
-  { id: "e1", title: "Team Standup",     date: "2026-06-08", time: "9:00 AM" },
-  { id: "e2", title: "1:1 with Manager", date: "2026-06-10", time: "2:00 PM" },
-  { id: "e3", title: "Sprint Planning",  date: "2026-06-15", time: "10:00 AM" },
-  { id: "e4", title: "Design Review",    date: "2026-06-20", time: "3:00 PM" },
-  { id: "e5", title: "All-Hands Meeting",date: "2026-06-12", time: "11:00 AM" },
-  { id: "e6", title: "Product Demo",     date: "2026-06-25", time: "1:00 PM" },
+  { id: "e1", title: "Team Standup",     date: "2026-06-29", time: "9:00 AM" },
+  { id: "e2", title: "1:1 with Manager", date: "2026-06-30", time: "2:00 PM" },
+  { id: "e3", title: "Sprint Planning",  date: "2026-07-01", time: "10:00 AM" },
+  { id: "e4", title: "Design Review",    date: "2026-07-03", time: "3:00 PM" },
+  { id: "e5", title: "All-Hands Meeting",date: "2026-07-02", time: "11:00 AM" },
+  { id: "e6", title: "Product Demo",     date: "2026-07-08", time: "1:00 PM" },
 ];
 
 export const PLAN_TEMPLATE: PlanStep[] = [

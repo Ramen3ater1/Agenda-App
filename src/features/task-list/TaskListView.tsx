@@ -123,10 +123,10 @@ function TaskRow({
 export default function TaskListView({
   title, subtitle, tasks, sections, folders, showFolderTag,
   selectedTaskId, onSelectTask, onToggleDone, onToggleStep, onAddTask, onAdvancedAdd, onReorder,
-  onShowOptimize, onShowAIPlan,
+  onShowOptimize, onShowAIPlan, embedded = false,
 }: {
-  title: string;
-  subtitle: string;
+  title?: string;
+  subtitle?: string;
   tasks: Task[];
   sections?: TaskSection[];
   folders: FolderType[];
@@ -138,8 +138,11 @@ export default function TaskListView({
   onAddTask: (title: string) => void;
   onAdvancedAdd: () => void;
   onReorder: (ids: string[]) => void;
-  onShowOptimize: () => void;
-  onShowAIPlan: () => void;
+  onShowOptimize?: () => void;
+  onShowAIPlan?: () => void;
+  // When embedded, render only the scrollable body (no page header / no h-screen).
+  // The planner supplies its own header in this mode.
+  embedded?: boolean;
 }) {
   const [draft, setDraft] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -186,26 +189,8 @@ export default function TaskListView({
     </div>
   );
 
-  return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden">
-      <div className="px-8 py-5 border-b border-border shrink-0">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">{title}</h1>
-            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle} &middot; {active} active</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={onShowAIPlan} className="flex items-center gap-2 px-3.5 py-2 border border-border text-sm font-medium rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
-              <Brain size={14} className="text-accent" /> AI Plan
-            </button>
-            <button onClick={onShowOptimize} className="flex items-center gap-2 px-3.5 py-2 border border-border text-sm font-medium rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
-              <Wand2 size={14} className="text-accent" /> AI Optimize
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-8 py-5">
+  const body = (
+    <div className="flex-1 overflow-y-auto px-8 py-5">
         <div className="flex items-center gap-2.5 px-4 py-3 mb-3 bg-card border border-border rounded-lg">
           <button
             onClick={onAdvancedAdd}
@@ -239,7 +224,30 @@ export default function TaskListView({
         ) : (
           tasks.length === 0 ? emptyState : group(tasks)
         )}
+    </div>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="px-8 py-5 border-b border-border shrink-0">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-lg font-semibold">{title}</h1>
+            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle} &middot; {active} active</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={onShowAIPlan} className="flex items-center gap-2 px-3.5 py-2 border border-border text-sm font-medium rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+              <Brain size={14} className="text-accent" /> AI Plan
+            </button>
+            <button onClick={onShowOptimize} className="flex items-center gap-2 px-3.5 py-2 border border-border text-sm font-medium rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+              <Wand2 size={14} className="text-accent" /> AI Optimize
+            </button>
+          </div>
+        </div>
       </div>
+      {body}
     </div>
   );
 }
