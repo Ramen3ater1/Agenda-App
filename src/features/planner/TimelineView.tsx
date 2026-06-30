@@ -64,6 +64,8 @@ function DailyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt }
   }
 
   function beginCreate(e: React.PointerEvent) {
+    // Only the empty track background creates; presses on a bar must not.
+    if (e.target !== e.currentTarget) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const startMin = snap(HOUR_START * 60 + ((e.clientX - rect.left) / rect.width) * SPAN_MIN, 15);
     setCreate({ a: startMin, b: startMin });
@@ -90,7 +92,7 @@ function DailyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt }
       <div ref={trackRef} className="relative bg-secondary/20 rounded-lg cursor-pointer" style={{ height: trackH }} onPointerDown={beginCreate}>
         {/* hour gridlines */}
         {hours.slice(0, -1).map((_, i) => (
-          <div key={i} className="absolute top-0 bottom-0 border-r border-border/40" style={{ left: `${(i / (hours.length - 1)) * 100}%` }} />
+          <div key={i} className="absolute top-0 bottom-0 border-r border-border/40 pointer-events-none" style={{ left: `${(i / (hours.length - 1)) * 100}%` }} />
         ))}
         {create && (() => {
           const lo = Math.min(create.a, create.b), hi = Math.max(create.a, create.b);

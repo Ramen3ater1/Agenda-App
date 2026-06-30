@@ -85,6 +85,9 @@ export default function TimeGridSurface({
   }
 
   function beginCreate(e: React.PointerEvent, dayIdx: number) {
+    // Only the empty column background creates a task; presses on a block (a
+    // descendant) must not, even if their stopPropagation is missed.
+    if (e.target !== e.currentTarget) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const startMin = snap(HOUR_START * 60 + ((e.clientY - rect.top) / HOUR_H) * 60, 15);
     setCreate({ day: dayIdx, a: startMin, b: startMin });
@@ -137,7 +140,7 @@ export default function TimeGridSurface({
         </div>
         <div ref={colsRef} className="flex flex-1 relative border-l border-border">
           {hours.map(h => (
-            <div key={h} className="absolute left-0 right-0 border-t border-border/60" style={{ top: minToY(h * 60) }} />
+            <div key={h} className="absolute left-0 right-0 border-t border-border/60 pointer-events-none" style={{ top: minToY(h * 60) }} />
           ))}
           {days.map((_, di) => (
             <div key={di} className="flex-1 relative border-r border-border/60 cursor-pointer"
@@ -155,13 +158,17 @@ export default function TimeGridSurface({
                 const dragging = drag?.id === t.id;
                 const startMin = dragging ? drag!.min : taskStartMinutes(t);
                 const dur = dragging ? drag!.dur : taskDurationMin(t);
-                const dayIdx = dragging ? drag!.day : di;
-                if (dragging && dayIdx !== di) return null; // rendered on its previewed column
                 const cfg = PRIORITY_CFG[t.priority];
                 const endMin = startMin + dur;
+                // While moving across days, keep the block mounted in its own
+                // column (so pointer capture survives) and slide it over the
+                // target day with a transform.
+                const xOffset = dragging && drag!.mode === "move" ? (drag!.day - di) * colWidth() : 0;
                 return (
                   <motion.div key={t.id}
-                    animate={dragging ? { scale: 1.03, boxShadow: "0 10px 24px rgba(0,0,0,0.25)", zIndex: 30 } : { scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)", zIndex: 1 }}
+                    animate={dragging
+                      ? { scale: 1.03, boxShadow: "0 10px 24px rgba(0,0,0,0.25)", zIndex: 30, x: xOffset }
+                      : { scale: 1, boxShadow: "0 0 0 rgba(0,0,0,0)", zIndex: 1, x: 0 }}
                     transition={{ type: "spring", damping: 30, stiffness: 350 }}
                     onClick={(e) => { e.stopPropagation(); if (!pointer.moved()) onSelectTask(t.id); }}
                     onPointerDown={(e) => beginBlockDrag(e, t, di, "move")}
@@ -177,20 +184,6 @@ export default function TimeGridSurface({
                   </motion.div>
                 );
               })}
-
-              {/* dragged block previewed onto a different column */}
-              {drag && drag.mode === "move" && drag.day === di && (() => {
-                const t = tasks.find(x => x.id === drag.id);
-                if (!t || taskStartISO(t) === toISO(days[di])) return null;
-                const cfg = PRIORITY_CFG[t.priority];
-                return (
-                  <div className={`absolute left-1 right-1 rounded-md border px-1.5 py-1 overflow-hidden opacity-80 pointer-events-none ${cfg.bg} ${cfg.border}`}
-                    style={{ top: minToY(drag.min), height: Math.max(MIN_BLOCK, (drag.dur / 60) * HOUR_H) }}>
-                    <div className={`text-[10px] font-medium truncate ${cfg.color}`}>{t.title}</div>
-                    <div className="text-[9px] text-muted-foreground">{minutesToTime(drag.min)}</div>
-                  </div>
-                );
-              })()}
             </div>
           ))}
         </div>

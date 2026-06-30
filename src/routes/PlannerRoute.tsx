@@ -42,7 +42,10 @@ export default function PlannerRoute() {
   const inWindow = tasksInWindow(whereTasks, window).length;
   const subtitle = `${inWindow} ${inWindow === 1 ? "task" : "tasks"} this ${level}`;
 
-  const selectTask = (id: string) => navigate(`/task/${id}?list=${where}`);
+  // Carry the current planner context so the detail page can return to this
+  // exact view (level/view/date), not the default checklist.
+  const selectTask = (id: string) =>
+    navigate(`/task/${id}?list=${where}&level=${level}&view=${view}&date=${date}`);
   const quickAdd = (t: string) => addTask(t, { folderId: where !== "all" ? where : undefined });
   // Empty click/drag in calendar/timeline opens the same modal the "+" button does,
   // pre-filled with the picked date/time/duration (threaded via URL params).

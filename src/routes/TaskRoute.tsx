@@ -17,6 +17,18 @@ export default function TaskRoute() {
   const [searchParams] = useSearchParams();
   const listKey = searchParams.get("list") ?? "all";
 
+  // Planner context the detail page was opened from, preserved across back +
+  // prev/next so we always return to the same view/level/date.
+  const plannerCtx = () => {
+    const p = new URLSearchParams();
+    for (const k of ["level", "view", "date"]) {
+      const v = searchParams.get(k);
+      if (v) p.set(k, v);
+    }
+    const q = p.toString();
+    return q ? `&${q}` : "";
+  };
+
   const { tasks, updateTask, toggleDone, deleteTask, startFocus, ensureWorkspace } = useTasks();
   const { folders } = useFolders();
   const { getWorkspace, updateWorkspace } = useWorkspaces();
@@ -34,15 +46,16 @@ export default function TaskRoute() {
     if (tab === "workspace" && task && !task.workspaceId) ensureWorkspace(task);
   }, [tab, task?.id, task?.workspaceId]);
 
-  if (!task) return <Navigate to="/today" replace />;
+  if (!task) return <Navigate to="/planner/all" replace />;
 
   const workspace = getWorkspace(task.workspaceId);
   const listIds = selectListTasks(tasks, listKey).map(t => t.id);
   const idx = listIds.indexOf(task.id);
-  const backTo = `/planner/${listKey}`;
+  const ctx = plannerCtx();
+  const backTo = `/planner/${listKey}${ctx ? `?${ctx.slice(1)}` : ""}`;
 
   function go(toId: string) {
-    navigate(`/task/${toId}?list=${listKey}`);
+    navigate(`/task/${toId}?list=${listKey}${ctx}`);
   }
 
   const onPrev = idx > 0 ? () => go(listIds[idx - 1]) : undefined;

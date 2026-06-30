@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Reorder, useDragControls } from "motion/react";
 import { Brain, ChevronRight, Check, Repeat, Folder, Wand2, GripVertical } from "lucide-react";
 import QuickAddBar from "@/features/planner/QuickAddBar";
@@ -24,6 +24,7 @@ function TaskRow({
   onSelect, onToggleDone, onToggleStep, onToggleExpand,
 }: RowProps) {
   const controls = useDragControls();
+  const movedRef = useRef(false);
   const cfg = PRIORITY_CFG[task.priority];
   const dl = daysLeft(task.deadline);
   const done = task.status === "done";
@@ -37,11 +38,13 @@ function TaskRow({
       as="div"
       dragListener={false}
       dragControls={controls}
+      onDragStart={() => { movedRef.current = true; }}
+      onDragEnd={() => { setTimeout(() => { movedRef.current = false; }, 0); }}
       whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.35)", zIndex: 20 }}
       className={`relative bg-card border rounded-lg overflow-hidden ${isSelected ? "border-accent" : "border-border"} ${done ? "opacity-60" : ""}`}
     >
       <div
-        onClick={() => onSelect(task.id)}
+        onClick={() => { if (!movedRef.current) onSelect(task.id); }}
         className="group flex items-center gap-2 px-3 py-3 pb-4 cursor-pointer hover:bg-secondary/40 transition-colors"
       >
         {/* Drag handle — appears on hover, reorders within the current list */}
