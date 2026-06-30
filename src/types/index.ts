@@ -35,6 +35,7 @@ export interface Task {
   startDate?: string;   // "2026-06-28"
   startTime?: string;   // "09:30" (24h); absent = all-day
   durationMin?: number; // estimated minutes; length of calendar/timeline blocks
+  location?: string;    // where the task happens; shown on timeline blocks
 }
 
 export interface Resource {

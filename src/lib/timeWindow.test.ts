@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getWindow, shiftWindow, daysInWindow, taskStartISO, taskInWindow,
   bucketByWindow, minutesToTime, timeToMinutes, snap, startOfWeek, parseISO, toISO,
+  packLanes,
 } from "./timeWindow";
 import type { Task } from "@/types";
 
@@ -92,5 +93,38 @@ describe("time helpers", () => {
   });
   it("startOfWeek is Monday", () => {
     expect(toISO(startOfWeek(parseISO("2026-06-28")))).toBe("2026-06-22");
+  });
+});
+
+describe("packLanes", () => {
+  const s = (x: { a: number; b: number }) => x.a;
+  const e = (x: { a: number; b: number }) => x.b;
+
+  it("places non-overlapping items in a single lane", () => {
+    const items = [{ a: 0, b: 10 }, { a: 10, b: 20 }, { a: 20, b: 30 }];
+    const { packed, laneCount } = packLanes(items, s, e);
+    expect(laneCount).toBe(1);
+    expect(packed.every(p => p.lane === 0)).toBe(true);
+  });
+
+  it("stacks overlapping items into separate lanes", () => {
+    const items = [{ a: 0, b: 30 }, { a: 10, b: 40 }, { a: 20, b: 50 }];
+    const { packed, laneCount } = packLanes(items, s, e);
+    expect(laneCount).toBe(3);
+    expect(packed.map(p => p.lane).sort()).toEqual([0, 1, 2]);
+  });
+
+  it("reuses a freed lane once an earlier item ends", () => {
+    // first ends at 10; third starts at 10 → reuses lane 0
+    const items = [{ a: 0, b: 10 }, { a: 5, b: 15 }, { a: 10, b: 20 }];
+    const { laneCount } = packLanes(items, s, e);
+    expect(laneCount).toBe(2);
+  });
+
+  it("never mutates the input array", () => {
+    const items = [{ a: 20, b: 30 }, { a: 0, b: 10 }];
+    const copy = [...items];
+    packLanes(items, s, e);
+    expect(items).toEqual(copy);
   });
 });

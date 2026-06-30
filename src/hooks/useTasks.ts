@@ -64,6 +64,7 @@ export function useTasks() {
           startDate:   opts?.startDate ?? opts?.deadline ?? todayISO(),
           startTime:   opts?.startTime ?? defaultStartTime(),
           durationMin: opts?.durationMin ?? 60,
+          location:    opts?.location,
         },
       });
     },

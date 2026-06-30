@@ -134,6 +134,29 @@ export function tasksInWindow(tasks: Task[], w: TimeWindow): Task[] {
   return tasks.filter(t => taskInWindow(t, w));
 }
 
+// ── Lane packing (greedy interval colouring) ─────────────────────────────────
+
+// Assigns each item to the lowest lane index whose previous item ends at or
+// before this item starts, so overlapping intervals stack into separate lanes
+// instead of one-row-per-item. Items are sorted by start (then end) first.
+// `startOf`/`endOf` may be minutes-of-day or day indices — any comparable number.
+export function packLanes<T>(
+  items: T[],
+  startOf: (t: T) => number,
+  endOf: (t: T) => number,
+): { packed: { item: T; lane: number }[]; laneCount: number } {
+  const sorted = [...items].sort((a, b) => startOf(a) - startOf(b) || endOf(a) - endOf(b));
+  const laneEnds: number[] = []; // last end placed in each lane
+  const packed = sorted.map(item => {
+    const s = startOf(item);
+    let lane = laneEnds.findIndex(end => end <= s);
+    if (lane === -1) { lane = laneEnds.length; laneEnds.push(endOf(item)); }
+    else laneEnds[lane] = endOf(item);
+    return { item, lane };
+  });
+  return { packed, laneCount: laneEnds.length || 1 };
+}
+
 // ── Checklist grouping per level ─────────────────────────────────────────────
 
 export function bucketByWindow(tasks: Task[], w: TimeWindow): TaskSection[] {

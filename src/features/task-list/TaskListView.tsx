@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Reorder, useDragControls } from "motion/react";
-import { Brain, Plus, ChevronRight, Check, Repeat, Folder, Wand2, GripVertical } from "lucide-react";
+import { Brain, ChevronRight, Check, Repeat, Folder, Wand2, GripVertical } from "lucide-react";
+import QuickAddBar from "@/features/planner/QuickAddBar";
 import { PRIORITY_CFG, RECURRENCE_LABELS } from "@/constants";
 import { daysLeft, dueLabel } from "@/lib/utils";
 import type { TaskSection } from "@/lib/utils";
@@ -144,10 +145,8 @@ export default function TaskListView({
   // The planner supplies its own header in this mode.
   embedded?: boolean;
 }) {
-  const [draft, setDraft] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  function submit() { if (draft.trim()) { onAddTask(draft.trim()); setDraft(""); } }
   function toggleExpand(id: string) {
     setExpanded(prev => {
       const next = new Set(prev);
@@ -191,23 +190,7 @@ export default function TaskListView({
 
   const body = (
     <div className="flex-1 overflow-y-auto px-8 py-5">
-        <div className="flex items-center gap-2.5 px-4 py-3 mb-3 bg-card border border-border rounded-lg">
-          <button
-            onClick={onAdvancedAdd}
-            title="Advanced — full options"
-            className="shrink-0 flex items-center justify-center size-7 rounded-full bg-violet-600 hover:bg-violet-500 border border-violet-700 transition-colors"
-          >
-            <Plus size={16} strokeWidth={3.5} className="text-white" />
-          </button>
-          <input
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && submit()}
-            placeholder="Add a task — press Enter"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          {draft.trim() && <button onClick={submit} className="text-xs px-2.5 py-1 bg-foreground text-background rounded font-medium">Add</button>}
-        </div>
+        <QuickAddBar onAddTask={onAddTask} onAdvancedAdd={onAdvancedAdd} className="mb-3" />
 
         {sections ? (
           sections.length === 0 ? emptyState : (

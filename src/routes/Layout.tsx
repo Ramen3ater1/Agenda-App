@@ -25,9 +25,12 @@ export default function Layout() {
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(onboardKey));
 
   const panel = searchParams.get("panel");
+  const createDate = searchParams.get("cdate") ?? undefined;
+  const createStart = searchParams.get("cstart") || undefined;
+  const createDur = searchParams.get("cdur");
   function closePanel() {
     const next = new URLSearchParams(searchParams);
-    next.delete("panel");
+    next.delete("panel"); next.delete("cdate"); next.delete("cstart"); next.delete("cdur");
     setSearchParams(next, { replace: true });
   }
 
@@ -82,6 +85,9 @@ export default function Layout() {
         <TaskCreateModal
           folders={folders}
           defaultFolderId={activeList !== "all" ? activeList : undefined}
+          defaultStartDate={createDate}
+          defaultStartTime={createStart}
+          defaultDurationMin={createDur ? Number(createDur) : undefined}
           onCreate={(title, opts) => addTask(title, opts)}
           onClose={closePanel}
         />

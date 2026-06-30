@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import PlannerHeader from "@/features/planner/PlannerHeader";
 import CalendarView from "@/features/planner/CalendarView";
 import TimelineView from "@/features/planner/TimelineView";
+import QuickAddBar from "@/features/planner/QuickAddBar";
 import TaskListView from "@/features/task-list";
 import { useTasks } from "@/hooks/useTasks";
 import { useFolders } from "@/hooks/useFolders";
@@ -42,11 +43,15 @@ export default function PlannerRoute() {
   const subtitle = `${inWindow} ${inWindow === 1 ? "task" : "tasks"} this ${level}`;
 
   const selectTask = (id: string) => navigate(`/task/${id}?list=${where}`);
-  const addForDate = (deadline: string, startTime?: string) =>
-    addTask("New task", {
-      deadline, startDate: deadline, startTime,
-      durationMin: startTime ? 60 : undefined,
-      folderId: where !== "all" ? where : undefined,
+  const quickAdd = (t: string) => addTask(t, { folderId: where !== "all" ? where : undefined });
+  // Empty click/drag in calendar/timeline opens the same modal the "+" button does,
+  // pre-filled with the picked date/time/duration (threaded via URL params).
+  const onCreateAt = (date: string, startTime?: string, durationMin?: number) =>
+    setParam({
+      panel: "create",
+      cdate: date,
+      cstart: startTime ?? "",
+      cdur: durationMin != null ? String(durationMin) : "",
     });
 
   return (
@@ -75,6 +80,12 @@ export default function PlannerRoute() {
           transition={{ duration: 0.18, ease: "easeOut" }}
           className="flex-1 flex flex-col overflow-hidden min-h-0"
         >
+          {view !== "checklist" && (
+            <div className="px-8 pt-4 shrink-0">
+              <QuickAddBar onAddTask={quickAdd} onAdvancedAdd={() => openPanel("create")} />
+            </div>
+          )}
+
           {view === "checklist" && (
             <TaskListView
               embedded
@@ -90,7 +101,7 @@ export default function PlannerRoute() {
                 if (t) updateTask(taskId, { steps: t.steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s) });
               }}
               onReorder={reorderTasks}
-              onAddTask={(t) => addTask(t, { folderId: where !== "all" ? where : undefined })}
+              onAddTask={quickAdd}
               onAdvancedAdd={() => openPanel("create")}
             />
           )}
@@ -102,7 +113,7 @@ export default function PlannerRoute() {
               gcalEvents={GCAL_EVENTS}
               gcalConnected={state.gcalConnected}
               onSelectTask={selectTask}
-              onAddTaskForDate={addForDate}
+              onCreateAt={onCreateAt}
               onReschedule={(id, startDate, startTime) => updateTask(id, { startDate, startTime })}
               onResize={(id, durationMin) => updateTask(id, { durationMin })}
             />
@@ -114,6 +125,7 @@ export default function PlannerRoute() {
               window={window}
               onSelectTask={selectTask}
               onUpdateTask={updateTask}
+              onCreateAt={onCreateAt}
             />
           )}
         </motion.div>

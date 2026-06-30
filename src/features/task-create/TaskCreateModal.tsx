@@ -6,18 +6,29 @@ import { uid, todayISO } from "@/lib/utils";
 import { PRIORITY_CFG, RECURRENCE_LABELS } from "@/constants";
 import type { Task, TaskStep, Folder as FolderType, Priority, RecurrenceType } from "@/types";
 
-export default function TaskCreateModal({ folders, defaultFolderId, onCreate, onClose }: {
+export default function TaskCreateModal({
+  folders, defaultFolderId, defaultStartDate, defaultStartTime, defaultDurationMin, defaultLocation,
+  onCreate, onClose,
+}: {
   folders: FolderType[];
   defaultFolderId?: string;
+  defaultStartDate?: string;
+  defaultStartTime?: string;
+  defaultDurationMin?: number;
+  defaultLocation?: string;
   onCreate: (title: string, opts: Partial<Omit<Task, "id" | "title">>) => void;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
-  const [deadline, setDeadline] = useState(todayISO());
+  const [deadline, setDeadline] = useState(defaultStartDate ?? todayISO());
   const [recurrence, setRecurrence] = useState<RecurrenceType>("none");
   const [folderId, setFolderId] = useState(defaultFolderId ?? "");
+  const [startDate, setStartDate] = useState(defaultStartDate ?? todayISO());
+  const [startTime, setStartTime] = useState(defaultStartTime ?? "09:00");
+  const [durationMin, setDurationMin] = useState(defaultDurationMin ?? 60);
+  const [location, setLocation] = useState(defaultLocation ?? "");
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [newStep, setNewStep] = useState("");
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -30,7 +41,12 @@ export default function TaskCreateModal({ folders, defaultFolderId, onCreate, on
 
   function submit() {
     if (!title.trim()) return;
-    onCreate(title.trim(), { description, priority, deadline, recurrence, steps, folderId: folderId || undefined });
+    onCreate(title.trim(), {
+      description, priority, deadline, recurrence, steps,
+      folderId: folderId || undefined,
+      startDate, startTime, durationMin,
+      location: location.trim() || undefined,
+    });
     toast.success("Task created");
     onClose();
   }
@@ -122,6 +138,24 @@ export default function TaskCreateModal({ folders, defaultFolderId, onCreate, on
               <select value={recurrence} onChange={e => setRecurrence(e.target.value as RecurrenceType)} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30">
                 {(Object.keys(RECURRENCE_LABELS) as RecurrenceType[]).map(r => <option key={r} value={r}>{RECURRENCE_LABELS[r]}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Start date</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Start time</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Duration</label>
+              <select value={durationMin} onChange={e => setDurationMin(Number(e.target.value))} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30">
+                {[15, 30, 45, 60, 90, 120, 180, 240].map(m => <option key={m} value={m}>{m < 60 ? `${m} min` : `${m / 60} h${m % 60 ? ` ${m % 60}m` : ""}`}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Location</label>
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Where?" className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30 placeholder:text-muted-foreground/60" />
             </div>
           </div>
         </div>

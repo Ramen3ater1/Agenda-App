@@ -65,7 +65,7 @@ export const INIT_TASKS: Task[] = [
     description: "Complete redesign with updated branding and Next.js 14 implementation.",
     priority: "high", status: "in-progress", deadline: "2026-07-03", folderId: "f1",
     workspaceId: "w1", recurrence: "none",
-    startDate: "2026-06-30", startTime: "09:00", durationMin: 120,
+    startDate: "2026-06-30", startTime: "09:00", durationMin: 120, location: "Home studio",
     steps: [
       { id: "s1a", title: "Define scope and gather inspiration", done: true },
       { id: "s1b", title: "Create wireframes for key pages", done: true },
@@ -79,7 +79,7 @@ export const INIT_TASKS: Task[] = [
     description: "Quarterly metrics and team performance analysis for leadership team.",
     priority: "critical", status: "todo", deadline: "2026-06-30", folderId: "f2",
     workspaceId: "w2", recurrence: "none",
-    startDate: "2026-06-30", startTime: "14:00", durationMin: 90,
+    startDate: "2026-06-30", startTime: "14:00", durationMin: 90, location: "Boardroom A",
     steps: [
       { id: "s2a", title: "Pull metrics from analytics dashboard", done: false },
       { id: "s2b", title: "Draft key insights and recommendations", done: false },
@@ -92,7 +92,7 @@ export const INIT_TASKS: Task[] = [
     description: "Complete advanced TypeScript patterns, generics, and decorators modules.",
     priority: "medium", status: "in-progress", deadline: "2026-07-15", folderId: "f3",
     workspaceId: "w3", recurrence: "weekly",
-    startDate: "2026-07-01", startTime: "10:00", durationMin: 120,
+    startDate: "2026-07-01", startTime: "10:00", durationMin: 120, location: "Library 3F",
     steps: [
       { id: "s3a", title: "Set up practice environment", done: true },
       { id: "s3b", title: "Complete generics module (ch. 4–7)", done: false },
@@ -105,7 +105,7 @@ export const INIT_TASKS: Task[] = [
     description: "Organize Q3 two-day offsite for the 12-person product team.",
     priority: "low", status: "todo", deadline: "2026-07-09", folderId: "f2",
     workspaceId: "w4", recurrence: "none",
-    startDate: "2026-07-02", startTime: "13:30", durationMin: 60,
+    startDate: "2026-07-02", startTime: "13:30", durationMin: 60, location: "Zoom",
     steps: [
       { id: "s4a", title: "Research and book venue", done: false },
       { id: "s4b", title: "Send calendar invites to all attendees", done: false },

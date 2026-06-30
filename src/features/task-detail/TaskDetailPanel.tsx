@@ -121,6 +121,22 @@ export default function TaskDetailPanel({
                 <label className="text-xs text-muted-foreground block mb-1">Due date</label>
                 <input type="date" value={task.deadline} onChange={e => onUpdateTask({ deadline: e.target.value })} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30" />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Start time</label>
+                  <input type="time" value={task.startTime ?? ""} onChange={e => onUpdateTask({ startTime: e.target.value || undefined })} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Duration</label>
+                  <select value={task.durationMin ?? 60} onChange={e => onUpdateTask({ durationMin: Number(e.target.value) })} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30">
+                    {[15, 30, 45, 60, 90, 120, 180, 240].map(m => <option key={m} value={m}>{m < 60 ? `${m} min` : `${m / 60} h${m % 60 ? ` ${m % 60}m` : ""}`}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Location</label>
+                <input value={task.location ?? ""} onChange={e => onUpdateTask({ location: e.target.value || undefined })} placeholder="Where?" className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30 placeholder:text-muted-foreground/60" />
+              </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Repeat</label>
                 <select value={task.recurrence} onChange={e => onUpdateTask({ recurrence: e.target.value as RecurrenceType })} className="w-full px-2.5 py-1.5 border border-border rounded-md text-sm bg-background outline-none focus:ring-1 focus:ring-accent/30">
