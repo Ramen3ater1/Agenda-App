@@ -183,7 +183,7 @@ function MonthlyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt
   }
 
   // A single draggable span bar (start → deadline) within a track.
-  const spanBar = (t: Task, opts?: { label?: boolean }) => {
+  const spanBar = (t: Task, opts?: { label?: boolean; detail?: boolean }) => {
     const dragging = drag?.id === t.id;
     const shift = dragging ? drag!.shift : 0;
     const startISO = dragging && drag!.mode === "move" ? addDaysISO(taskStartISO(t), shift) : taskStartISO(t);
@@ -198,9 +198,17 @@ function MonthlyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt
         onClick={(e) => { e.stopPropagation(); if (!pointer.moved()) onSelectTask(t.id); }}
         onPointerDown={(e) => beginDrag(e, t, "move")}
         style={{ left: `${(si / days.length) * 100}%`, width: `${((ei - si + 1) / days.length) * 100}%`, touchAction: "none" }}
-        className={`absolute top-0.5 bottom-0.5 rounded border flex items-center gap-1 px-2 cursor-grab active:cursor-grabbing select-none ${cfg.bg} ${cfg.border} ${t.status === "done" ? "opacity-60" : ""} ${dragging ? "" : "transition-[left,width] duration-150"}`}>
-        {opts?.label && t.recurrence !== "none" && <Repeat size={9} className={cfg.color} />}
-        <span className={`text-[10px] font-medium truncate ${cfg.color} ${t.status === "done" ? "line-through" : ""}`}>{t.title}</span>
+        className={`absolute top-0.5 bottom-0.5 rounded border flex ${opts?.detail ? "flex-col justify-center" : "items-center"} gap-0.5 px-2 cursor-grab active:cursor-grabbing select-none ${cfg.bg} ${cfg.border} ${t.status === "done" ? "opacity-60" : ""} ${dragging ? "" : "transition-[left,width] duration-150"}`}>
+        <div className="flex items-center gap-1 w-full">
+          {opts?.label && t.recurrence !== "none" && <Repeat size={9} className={`${cfg.color} shrink-0`} />}
+          <span className={`text-[10px] font-medium truncate ${cfg.color} ${t.status === "done" ? "line-through" : ""}`}>{t.title}</span>
+        </div>
+        {opts?.detail && (t.startTime || t.location) && (
+          <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground truncate">
+            {t.startTime && <span>{t.startTime}</span>}
+            {t.location && <span className="flex items-center gap-0.5 truncate"><MapPin size={8} /> {t.location}</span>}
+          </div>
+        )}
         <div onPointerDown={(e) => beginDrag(e, t, "resize")} className="absolute top-0 bottom-0 right-0 w-2 cursor-ew-resize" title="Drag to change deadline" />
       </motion.div>
     );
@@ -215,8 +223,11 @@ function MonthlyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt
     </div>
   );
 
-  const { packed, laneCount } = packLanes(oneoff, t => dayIndex(taskStartISO(t)), t => dayIndex(t.deadline));
-  const ROW_H = 26;
+  // End is exclusive (deadline day + 1): a day occupies the whole cell, so two
+  // tasks on the same day must stack into separate lanes rather than share one.
+  const { packed, laneCount } = packLanes(oneoff, t => dayIndex(taskStartISO(t)), t => dayIndex(t.deadline) + 1);
+  const ROW_H = 38;
+  const ROW_GAP = 6;
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-5">
@@ -246,12 +257,12 @@ function MonthlyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt
 
       <div>
         {recurrent.length > 0 && <h3 className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">Tasks</h3>}
-        <div className="relative" style={{ height: Math.max(1, laneCount) * (ROW_H + 4) }}>
+        <div className="relative" style={{ height: Math.max(1, laneCount) * (ROW_H + ROW_GAP) }}>
           {gridBg}
           {oneoff.length === 0 && <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">Nothing scheduled. Click a day to add.</p>}
           {packed.map(({ item, lane }) => (
-            <div key={item.id} className="absolute left-0 right-0" style={{ top: lane * (ROW_H + 4), height: ROW_H }}>
-              {spanBar(item)}
+            <div key={item.id} className="absolute left-0 right-0" style={{ top: lane * (ROW_H + ROW_GAP), height: ROW_H }}>
+              {spanBar(item, { detail: true })}
             </div>
           ))}
         </div>
