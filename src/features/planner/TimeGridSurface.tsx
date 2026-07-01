@@ -4,7 +4,7 @@ import { MapPin } from "lucide-react";
 import { PRIORITY_CFG } from "@/constants";
 import {
   toISO, taskStartISO, isAllDay, taskStartMinutes, taskDurationMin,
-  minutesToTime, snap,
+  minutesToTime, timeToMinutes, snap,
 } from "@/lib/timeWindow";
 import { usePointerDrag } from "./usePointerDrag";
 import type { Task, GCalEvent } from "@/types";
@@ -47,7 +47,9 @@ export default function TimeGridSurface({
 
   const timedByDay = (di: number) => tasks.filter(t => !isAllDay(t) && taskStartISO(t) === toISO(days[di]));
   const allDayByDay = (di: number) => tasks.filter(t => isAllDay(t) && taskStartISO(t) === toISO(days[di]));
-  const eventsByDay = (di: number) => (gcalConnected ? gcalEvents.filter(e => e.date === toISO(days[di])) : []);
+  const gEventsByDay = (di: number) => (gcalConnected ? gcalEvents.filter(e => e.date === toISO(days[di])) : []);
+  const allDayEventsByDay = (di: number) => gEventsByDay(di).filter(e => !e.startTime);
+  const timedEventsByDay = (di: number) => gEventsByDay(di).filter(e => e.startTime);
 
   const colWidth = () => (colsRef.current ? colsRef.current.clientWidth / days.length : 0);
   const deltaMinFromDy = (dy: number) => snap((dy / HOUR_H) * 60, 15);
@@ -123,7 +125,7 @@ export default function TimeGridSurface({
                     <div key={t.id} onClick={() => onSelectTask(t.id)}
                       className={`text-[9px] px-1 py-0.5 rounded truncate cursor-pointer ${PRIORITY_CFG[t.priority].bg} ${PRIORITY_CFG[t.priority].color}`}>{t.title}</div>
                   ))}
-                  {eventsByDay(di).map(ev => (
+                  {allDayEventsByDay(di).map(ev => (
                     <div key={ev.id} className="text-[9px] px-1 py-0.5 rounded truncate bg-blue-50 text-blue-700">{ev.title}</div>
                   ))}
                 </div>
@@ -184,6 +186,21 @@ export default function TimeGridSurface({
                     <div onPointerDown={(e) => beginBlockDrag(e, t, di, "resize")}
                       className="absolute bottom-0 left-0 right-0 h-1.5 cursor-ns-resize" title="Drag to resize" />
                   </motion.div>
+                );
+              })}
+
+              {/* read-only Google Calendar events */}
+              {timedEventsByDay(di).map(ev => {
+                const startMin = timeToMinutes(ev.startTime!);
+                const dur = ev.durationMin ?? 60;
+                return (
+                  <div key={ev.id} title={`${ev.title}${ev.location ? ` · ${ev.location}` : ""}`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    style={{ top: minToY(startMin), height: Math.max(MIN_BLOCK, (dur / 60) * HOUR_H) }}
+                    className="absolute left-1 right-1 rounded-md border border-blue-300/60 border-dashed bg-blue-50/80 px-1.5 py-1 overflow-hidden cursor-default z-[2]">
+                    <div className="text-[10px] font-medium truncate text-blue-700">{ev.title}</div>
+                    <div className="text-[9px] text-blue-500/80">{ev.time}</div>
+                  </div>
                 );
               })}
             </div>

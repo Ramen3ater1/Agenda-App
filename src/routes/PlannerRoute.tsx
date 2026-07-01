@@ -7,8 +7,8 @@ import QuickAddBar from "@/features/planner/QuickAddBar";
 import TaskListView from "@/features/task-list";
 import { useTasks } from "@/hooks/useTasks";
 import { useFolders } from "@/hooks/useFolders";
-import { useTaskStore } from "@/store/TaskProvider";
-import { GCAL_EVENTS } from "@/constants";
+import { useAuth } from "@/store/AuthProvider";
+import { useGoogleSync, useGoogleEvents } from "@/store/GoogleSyncProvider";
 import { todayISO } from "@/lib/utils";
 import { getWindow, shiftWindow, bucketByWindow, tasksInWindow } from "@/lib/timeWindow";
 import type { PlannerLevel, PlannerView } from "@/types";
@@ -22,12 +22,14 @@ export default function PlannerRoute() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { tasks, addTask, toggleDone, updateTask, reorderTasks } = useTasks();
   const { folders } = useFolders();
-  const { state } = useTaskStore();
+  const { user } = useAuth();
+  const gcal = useGoogleSync();
 
   const level = (LEVELS.includes(searchParams.get("level") as PlannerLevel) ? searchParams.get("level") : "week") as PlannerLevel;
   const view = (VIEWS.includes(searchParams.get("view") as PlannerView) ? searchParams.get("view") : "checklist") as PlannerView;
   const date = searchParams.get("date") || todayISO();
   const window = getWindow(level, date);
+  const gcalEvents = useGoogleEvents(window);
 
   function setParam(updates: Record<string, string>) {
     const next = new URLSearchParams(searchParams);
@@ -72,6 +74,12 @@ export default function PlannerRoute() {
         onToday={() => setParam({ date: todayISO() })}
         onShowAIPlan={() => openPanel("plan")}
         onShowOptimize={() => openPanel("optimize")}
+        gcalAvailable={!!user}
+        gcalConnected={gcal.connected}
+        gcalSyncing={gcal.syncing}
+        gcalNeedsReauth={gcal.needsReauth}
+        onConnectGcal={gcal.connect}
+        onDisconnectGcal={gcal.disconnect}
       />
 
       <AnimatePresence mode="wait">
@@ -113,8 +121,8 @@ export default function PlannerRoute() {
             <CalendarView
               tasks={whereTasks}
               window={window}
-              gcalEvents={GCAL_EVENTS}
-              gcalConnected={state.gcalConnected}
+              gcalEvents={gcalEvents}
+              gcalConnected={gcal.connected}
               onSelectTask={selectTask}
               onCreateAt={onCreateAt}
               onReschedule={(id, startDate, startTime) => updateTask(id, { startDate, startTime })}

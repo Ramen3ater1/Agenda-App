@@ -64,8 +64,12 @@ export interface Workspace {
 export interface GCalEvent {
   id: string;
   title: string;
-  date: string;
-  time: string;
+  date: string;        // "2026-06-30" (local date the event starts on)
+  time: string;        // human label, e.g. "9:00 AM" or "All day"
+  startTime?: string;  // "09:00" (24h) for timed events; absent = all-day
+  durationMin?: number;
+  allDay?: boolean;
+  location?: string;
 }
 
 export interface PlanStep {

@@ -1,9 +1,13 @@
 import { toast } from "sonner";
 import { useTaskStore } from "@/store/TaskProvider";
 import { useTimer } from "@/store/TimerProvider";
+import { useGoogleSync } from "@/store/GoogleSyncProvider";
 import { uid, todayISO, advanceDeadline, formatDate } from "@/lib/utils";
 import { minutesToTime } from "@/lib/timeWindow";
 import type { Task } from "@/types";
+
+// Task fields whose change should be reflected on the mirrored Google event.
+const GCAL_PUSH_FIELDS: (keyof Task)[] = ["title", "description", "location", "startDate", "startTime", "durationMin", "deadline"];
 
 // A sensible default for a freshly created task: starting ~10 minutes from now
 // (snapped to 5-minute marks) so it lands on the calendar/timeline instead of
@@ -17,6 +21,7 @@ function defaultStartTime(): string {
 export function useTasks() {
   const { state, dispatch } = useTaskStore();
   const timer = useTimer();
+  const gcal = useGoogleSync();
 
   function findTask(id: string) {
     return state.tasks.find(t => t.id === id);
@@ -49,24 +54,23 @@ export function useTasks() {
     addTask: (title: string, opts?: Partial<Omit<Task, "id" | "title">>) => {
       const t = title.trim();
       if (!t) return;
-      dispatch({
-        type: "ADD_TASK",
-        task: {
-          id: uid(), title: t,
-          description: opts?.description ?? "",
-          priority:    opts?.priority ?? "medium",
-          status:      opts?.status ?? "todo",
-          deadline:    opts?.deadline ?? todayISO(),
-          steps:       opts?.steps ?? [],
-          folderId:    opts?.folderId,
-          workspaceId: opts?.workspaceId,
-          recurrence:  opts?.recurrence ?? "none",
-          startDate:   opts?.startDate ?? opts?.deadline ?? todayISO(),
-          startTime:   opts?.startTime ?? defaultStartTime(),
-          durationMin: opts?.durationMin ?? 60,
-          location:    opts?.location,
-        },
-      });
+      const task: Task = {
+        id: uid(), title: t,
+        description: opts?.description ?? "",
+        priority:    opts?.priority ?? "medium",
+        status:      opts?.status ?? "todo",
+        deadline:    opts?.deadline ?? todayISO(),
+        steps:       opts?.steps ?? [],
+        folderId:    opts?.folderId,
+        workspaceId: opts?.workspaceId,
+        recurrence:  opts?.recurrence ?? "none",
+        startDate:   opts?.startDate ?? opts?.deadline ?? todayISO(),
+        startTime:   opts?.startTime ?? defaultStartTime(),
+        durationMin: opts?.durationMin ?? 60,
+        location:    opts?.location,
+      };
+      dispatch({ type: "ADD_TASK", task });
+      void gcal.upsertEvent(task); // best-effort mirror to Google Calendar
     },
 
     updateTask: (id: string, updates: Partial<Task>) => {
@@ -79,6 +83,9 @@ export function useTasks() {
       if (next.status === "done") {
         const t = findTask(id);
         if (t) handleCompletionSideEffects(t);
+      }
+      if (task && GCAL_PUSH_FIELDS.some(f => f in next)) {
+        void gcal.upsertEvent({ ...task, ...next });
       }
     },
 
@@ -97,6 +104,7 @@ export function useTasks() {
       const task = findTask(id);
       if (!task) return;
       if (task.workspaceId && timer.workspaceId === task.workspaceId) timer.reset();
+      void gcal.removeEvent(id); // best-effort remove from Google Calendar
       dispatch({ type: "DELETE_TASK", id });
     },
 
