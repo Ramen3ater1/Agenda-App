@@ -56,8 +56,13 @@ function DailyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt }
       },
       onEnd: (dx) => {
         const d = dMinFromDx(dx);
-        if (mode === "move") onUpdateTask(t.id, { startDate: dayISO, startTime: minutesToTime(Math.max(0, Math.min(24 * 60 - 15, origMin + d))) });
-        else onUpdateTask(t.id, { durationMin: Math.max(15, origDur + d) });
+        if (mode === "move") {
+          const nm = Math.max(0, Math.min(24 * 60 - 15, origMin + d));
+          if (nm !== origMin) onUpdateTask(t.id, { startDate: dayISO, startTime: minutesToTime(nm) });
+        } else {
+          const nd = Math.max(15, origDur + d);
+          if (nd !== origDur) onUpdateTask(t.id, { durationMin: nd });
+        }
         setDrag(null);
       },
     });
@@ -99,7 +104,7 @@ function DailyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt }
           return <div className="absolute top-1 bottom-1 rounded-md border border-dashed border-accent bg-accent/10 pointer-events-none"
             style={{ left: `${leftPct(lo)}%`, width: `${Math.max(1, widthPct(hi - lo))}%` }} />;
         })()}
-        {items.length === 0 && <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">Nothing scheduled this day. Click or drag to add.</p>}
+        {items.length === 0 && <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground pointer-events-none">Nothing scheduled this day. Click or drag to add.</p>}
         {items.map(t => {
           const dragging = drag?.id === t.id;
           const startMin = dragging ? drag!.min : taskStartMinutes(t);
@@ -231,11 +236,15 @@ function MonthlyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt
 
   return (
     <div className="flex-1 overflow-y-auto px-8 py-5">
-      {/* day axis */}
-      <div ref={trackRef} className="flex mb-1">
-        {days.map((d, i) => (
-          <div key={i} className={`flex-1 text-center text-[10px] ${toISO(d) === todayISOv ? "text-accent font-semibold" : "text-muted-foreground"}`}>{d.getDate()}</div>
-        ))}
+      {/* day axis — the 150px gutter matches the row labels so the date
+          numbers line up with both the recurrent and one-off bar tracks */}
+      <div className="flex mb-1">
+        <div className="w-[150px] shrink-0" />
+        <div ref={trackRef} className="flex flex-1">
+          {days.map((d, i) => (
+            <div key={i} className={`flex-1 text-center text-[10px] ${toISO(d) === todayISOv ? "text-accent font-semibold" : "text-muted-foreground"}`}>{d.getDate()}</div>
+          ))}
+        </div>
       </div>
 
       {recurrent.length > 0 && (
@@ -257,14 +266,17 @@ function MonthlyTimeline({ tasks, window, onSelectTask, onUpdateTask, onCreateAt
 
       <div>
         {recurrent.length > 0 && <h3 className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">Tasks</h3>}
-        <div className="relative" style={{ height: Math.max(1, laneCount) * (ROW_H + ROW_GAP) }}>
-          {gridBg}
-          {oneoff.length === 0 && <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">Nothing scheduled. Click a day to add.</p>}
-          {packed.map(({ item, lane }) => (
-            <div key={item.id} className="absolute left-0 right-0" style={{ top: lane * (ROW_H + ROW_GAP), height: ROW_H }}>
-              {spanBar(item, { detail: true })}
-            </div>
-          ))}
+        <div className="flex">
+          <div className="w-[150px] shrink-0" />
+          <div className="flex-1 relative" style={{ height: Math.max(1, laneCount) * (ROW_H + ROW_GAP) }}>
+            {gridBg}
+            {oneoff.length === 0 && <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground pointer-events-none">Nothing scheduled. Click a day to add.</p>}
+            {packed.map(({ item, lane }) => (
+              <div key={item.id} className="absolute left-0 right-0" style={{ top: lane * (ROW_H + ROW_GAP), height: ROW_H }}>
+                {spanBar(item, { detail: true })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <p className="text-[11px] text-muted-foreground mt-3 text-center">Bars run from start date to deadline · drag to move · drag the right edge to change the deadline · click a day to add</p>

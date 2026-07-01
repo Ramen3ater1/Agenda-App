@@ -35,6 +35,7 @@ export function usePointerDrag() {
     function handleUp(ev: PointerEvent) {
       target.removeEventListener("pointermove", handleMove);
       target.removeEventListener("pointerup", handleUp);
+      target.removeEventListener("pointercancel", handleUp);
       try { target.releasePointerCapture(ev.pointerId); } catch { /* no-op */ }
       onEnd(ev.clientX - startX, ev.clientY - startY);
       // Let the click that follows pointerup observe the moved flag, then clear it.
@@ -42,6 +43,9 @@ export function usePointerDrag() {
     }
     target.addEventListener("pointermove", handleMove);
     target.addEventListener("pointerup", handleUp);
+    // A canceled gesture (touch interruption, capture loss) must still tear down
+    // and finalize, or the drag would stay stuck and the listeners would leak.
+    target.addEventListener("pointercancel", handleUp);
   }
 
   return { start, moved: () => movedRef.current };

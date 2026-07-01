@@ -75,9 +75,11 @@ export default function TimeGridSurface({
           const dayShift = cw ? Math.round(dx / cw) : 0;
           const day = Math.max(0, Math.min(days.length - 1, dayIdx + dayShift));
           const min = Math.max(0, Math.min(24 * 60 - 15, origMin + dMin));
-          onReschedule(t.id, toISO(days[day]), minutesToTime(min));
+          // Skip the no-op write a plain click would otherwise trigger.
+          if (day !== dayIdx || min !== origMin) onReschedule(t.id, toISO(days[day]), minutesToTime(min));
         } else {
-          onResize(t.id, Math.max(15, origDur + dMin));
+          const next = Math.max(15, origDur + dMin);
+          if (next !== origDur) onResize(t.id, next);
         }
         setDrag(null);
       },
