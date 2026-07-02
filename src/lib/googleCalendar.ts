@@ -25,7 +25,11 @@ async function call(token: string, path: string, init?: RequestInit) {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   if (res.status === 401) throw new GoogleAuthError();
-  if (!res.ok) throw new Error(`Google Calendar API ${res.status}`);
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json())?.error?.message ?? ""; } catch { /* non-JSON body */ }
+    throw new Error(`Google Calendar API ${res.status}${detail ? `: ${detail}` : ""}`);
+  }
   return res.status === 204 ? null : res.json();
 }
 

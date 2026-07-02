@@ -147,12 +147,27 @@ export function useGoogleEvents(window: TimeWindow): GCalEvent[] {
   const endISO = toISO(window.end);
 
   useEffect(() => {
-    if (!connected || !token) { setEvents([]); return; }
+    if (!connected || !token) {
+      setEvents([]);
+      // eslint-disable-next-line no-console
+      if (connected && !token) console.warn("[gcal] connected but no access token (reconnect needed)");
+      return;
+    }
     let cancelled = false;
     setSyncing(true);
     listEvents(token, startISO, endISO)
-      .then(evs => { if (!cancelled) setEvents(evs); })
-      .catch(err => { if (err instanceof GoogleAuthError) onAuthError(); })
+      .then(evs => {
+        if (cancelled) return;
+        setEvents(evs);
+        // eslint-disable-next-line no-console
+        console.info(`[gcal] loaded ${evs.length} event(s) for ${startISO}..${endISO}`);
+      })
+      .catch(err => {
+        if (err instanceof GoogleAuthError) { onAuthError(); return; }
+        // eslint-disable-next-line no-console
+        console.error("[gcal] failed to load events:", err);
+        toast.error(`Calendar sync failed: ${err?.message ?? err}`);
+      })
       .finally(() => { if (!cancelled) setSyncing(false); });
     return () => { cancelled = true; };
   }, [connected, token, startISO, endISO, onAuthError, setSyncing]);

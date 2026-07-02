@@ -29,20 +29,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [guest, setGuest] = useState(() => localStorage.getItem(GUEST_KEY) === "1");
 
   useEffect(() => {
-    // Surface an OAuth failure the provider handed back in the URL (e.g. the
-    // redirect URL isn't allow-listed), instead of silently landing on /login.
     const qs = new URLSearchParams(window.location.search);
     const hs = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const errDesc = qs.get("error_description") ?? hs.get("error_description");
     if (errDesc) toast.error(decodeURIComponent(errDesc.replace(/\+/g, " ")));
 
-    // getSession() awaits supabase's URL processing, so on an OAuth return it
-    // resolves with the freshly exchanged session.
+    // ── OAuth-return diagnostics (temporary) ─────────────────────────────────
+    // Reports exactly what came back and whether a session was established, so
+    // we can tell a config failure (no code) from a storage failure (code but
+    // no verifier). Remove once the redirect flow is confirmed working.
+    const verifierKey = Object.keys(localStorage).find(k => k.endsWith("-code-verifier"));
+    const diag = {
+      href: window.location.href,
+      hasCode: qs.has("code"),
+      hasImplicitToken: hs.has("access_token"),
+      error: qs.get("error") ?? hs.get("error") ?? null,
+      errorDescription: errDesc ?? null,
+      codeVerifierInStorage: !!verifierKey,
+    };
+
     supabase.auth
       .getSession()
       .then(({ data }) => {
         setSession(data.session);
         setLoading(false);
+        if ((diag.hasCode || diag.hasImplicitToken || diag.error) && !data.session) {
+          // We came back from OAuth but no session was established.
+          // eslint-disable-next-line no-console
+          console.error("[auth] OAuth return produced no session:", diag);
+          toast.error(
+            diag.error
+              ? `Google sign-in error: ${diag.error}`
+              : diag.hasCode && !diag.codeVerifierInStorage
+                ? "OAuth code returned but PKCE verifier is missing from this browser (storage/origin mismatch)."
+                : "OAuth returned but no session — likely the redirect URL isn't allow-listed in Supabase.",
+          );
+        } else if (data.session) {
+          // eslint-disable-next-line no-console
+          console.info("[auth] session established", { fromOAuth: diag.hasCode || diag.hasImplicitToken });
+        }
       })
       .catch(() => setLoading(false));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
